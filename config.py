@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from ok import ConfigOption
+from qfluentwidgets import FluentIcon
 from src.task.process_feature import process_feature
 
 version = "dev"
@@ -78,13 +79,99 @@ monthly_card_config_option = ConfigOption('Monthly Card Config', {
     'Monthly Card Time': 'Your computer\'s local time when the monthly card will popup, hour in (1-24)'
 })
 
+def apply_low_quality():
+    from src.utils import graphics_helper
+    from ok import og
+    from ok.gui.util.Alert import alert_info
+    
+    config = og.global_config.get_config('画质优化配置')
+    game_path = config.get('游戏路径')
+    
+    if not game_path:
+        alert_info("❌ 请先填写游戏路径并保存！")
+        return
+        
+    graphics_helper.ensure_presets(game_path)
+    if graphics_helper.apply_preset('low', game_path):
+        alert_info("✅ 已成功切换为【低画质】！")
+
+def restore_original_quality():
+    from src.utils import graphics_helper
+    from ok import og
+    from ok.gui.util.Alert import alert_info
+    
+    config = og.global_config.get_config('画质优化配置')
+    game_path = config.get('游戏路径')
+    
+    if not game_path:
+        alert_info("❌ 请先填写游戏路径并保存！")
+        return
+        
+    if graphics_helper.apply_preset('original', game_path):
+        alert_info("✅ 已成功恢复为【原画质】！")
+
+graphics_config_option = ConfigOption('画质优化配置', {
+    '游戏路径': r'',
+    '手动即时控制': '',
+    '自动优化 (游戏启动时)': True,
+    '自动还原 (游戏退出时)': True,
+}, description='画质优化全局设置', config_description={
+    '游戏路径': '鸣潮游戏安装路径 (例如: E:\\Wuthering Waves)',
+    '手动即时控制': '点击右侧按钮立即应用配置，无需启动任务',
+    '自动优化 (游戏启动时)': '开启后，当从本应用内启动游戏时，将自动切换为低画质',
+    '自动还原 (游戏退出时)': '开启后，当游戏运行结束，将自动恢复原画质配置'
+}, config_type={
+    '手动即时控制': {
+        'type': 'button',
+        'buttons': [
+            {'text': '切换低画质', 'callback': apply_low_quality},
+            {'text': '恢复原画质', 'callback': restore_original_quality}
+        ]
+    }
+})
+
+# --- GUI 启动拦截钩子 (区分手动启动与助手启动) ---
+try:
+    import ok.gui.StartController as sc
+    from ok import og
+    import logging
+    
+    _hook_logger = logging.getLogger("GraphicsHook")
+    _original_start_device = sc.StartController.start_device
+    
+    def _patched_start_device(self):
+        try:
+            from src.utils import graphics_helper
+            # 只有当游戏还没启动时，才执行画质替换
+            is_running = graphics_helper.is_game_running()
+
+            # 从全局配置中心读取设置
+            if og.global_config:
+                graphics_config = og.global_config.get_config('画质优化配置')
+                if graphics_config and graphics_config.get('自动优化 (游戏启动时)') and not is_running:
+                    game_path = graphics_config.get('游戏路径')
+                    if game_path:
+                        _hook_logger.info("🚀 [GUI 拦截] 检查到游戏尚未启动，正在同步低画质配置...")
+                        graphics_helper.ensure_presets(game_path)
+                        graphics_helper.apply_preset('low', game_path)
+        except Exception as e:
+            _hook_logger.error(f"画质同步拦截失败: {e}")
+            
+        return _original_start_device(self)
+
+    # 替换原有的启动方法
+    sc.StartController.start_device = _patched_start_device
+except Exception as e:
+    print(f"无法挂载 GUI 启动拦截器: {e}")
+
+
 config = {
     'debug': False,  # Optional, default: False
     'use_gui': True,
     'config_folder': 'configs',
     'screenshot_processor': make_bottom_right_black,
     'gui_icon': 'icon.png',
-    'global_configs': [key_config_option, char_config_option, pick_echo_config_option, monthly_card_config_option],
+    'global_configs': [key_config_option, char_config_option, pick_echo_config_option, monthly_card_config_option, graphics_config_option],
     'ocr': {
         'lib': 'onnxocr',
         'auto_simplify': True,
@@ -188,3 +275,10 @@ config = {
         ["src.task.FastTravelTask", "FastTravelTask"],
     ], 'scene': ["src.scene.WWScene", "WWScene"],
 }
+
+# 启动后台画质监控守护进程
+try:
+    from src.utils import graphics_helper
+    graphics_helper.start_exit_monitor()
+except Exception as e:
+    print(f"Failed to start graphics exit monitor: {e}")

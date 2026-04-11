@@ -11,6 +11,7 @@ import cv2
 
 from src.Labels import Labels
 from src.scene.WWScene import WWScene
+from src.utils import graphics_helper
 
 logger = Logger.get_logger(__name__)
 number_re = re.compile(r'(\d+)')
@@ -36,6 +37,24 @@ class BaseWWTask(BaseTask):
         self._logged_in = False
         self.scene: WWScene | None = None
         self.tacet_scroll_x = 2490 / 2560
+
+    def start_device(self):
+        # 仅当应用内启动流程触发且开启了自动优化时执行
+        graphics_config = self.get_global_config('画质优化配置')
+        auto_optimize = graphics_config.get('自动优化 (游戏启动时)')
+        game_path = graphics_config.get('游戏路径')
+        
+        # 判断游戏是否已经在运行
+        is_running = graphics_helper.is_game_running()
+
+        if auto_optimize and game_path and not is_running:
+            self.log_info("🚀 [应用内启动] 检查到游戏未运行，正在应用优化配置...")
+            graphics_helper.ensure_presets(game_path)
+            graphics_helper.apply_preset('low', game_path)
+        elif is_running:
+            self.log_info("ℹ️ [启动检查] 游戏已在运行中，跳过画质优化，保持当前配置。")
+                
+        return super().start_device()
 
     def is_open_world_auto_combat(self):
         from src.task.AutoCombatTask import AutoCombatTask
