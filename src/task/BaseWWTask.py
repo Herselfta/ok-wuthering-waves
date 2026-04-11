@@ -361,15 +361,17 @@ class BaseWWTask(BaseTask):
     def in_realm(self):
         return not bool(getattr(self, 'treat_as_not_in_realm', False)) and self.find_one('illusive_realm_exit',
                                                                                          threshold=0.7,
-                                                                                         frame_processor=convert_bw) and self.in_team() and not self.find_one(
-            'world_earth_icon', threshold=0.55,
-            frame_processor=convert_bw)
+                                                                                         frame_processor=convert_bw) and self.in_team()[0] and not self.has_world_icon()
 
     def in_world(self):
+        return self.has_world_icon() and self.in_team()[0] and not self.find_one('illusive_realm_exit',
+                                                                                 threshold=0.7,
+                                                                                 frame_processor=convert_bw)
+
+    def has_world_icon(self):
         return self.find_one('world_earth_icon', threshold=0.55,
-                             frame_processor=convert_bw) and self.in_team() and not self.find_one('illusive_realm_exit',
-                                                                                                  threshold=0.7,
-                                                                                                  frame_processor=convert_bw)
+                             frame_processor=convert_bw) or self.find_one('multiplayer_world_mark', threshold=0.55,
+                                                                           frame_processor=convert_bw)
 
     def in_illusive_realm(self):
         return self.find_one('new_realm_4') and self.in_realm() and self.find_one('illusive_realm_menu', threshold=0.6)
@@ -879,9 +881,12 @@ class BaseWWTask(BaseTask):
                     current = i
             else:
                 exist_count += 1
-        if exist_count == 2 or exist_count == 1:
+        if exist_count == 2 or (exist_count == 1 and current != -1):
             self._logged_in = True
             return True, current, exist_count + 1
+        elif self.find_one('multiplayer_world_mark', threshold=0.6, frame_processor=convert_bw):
+            self._logged_in = True
+            return True, max(0, current), max(1, exist_count + 1)
         else:
             return False, -1, exist_count + 1
 
