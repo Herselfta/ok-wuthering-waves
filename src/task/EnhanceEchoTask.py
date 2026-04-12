@@ -2,6 +2,11 @@
 import re
 import time
 import os
+import zlib
+import threading
+import requests
+import json
+import traceback
 
 from qfluentwidgets import FluentIcon
 
@@ -15,6 +20,82 @@ logger = Logger.get_logger(__name__)
 number_pattern = re.compile(r"^[\d.%％ ]+$")
 property_pattern = re.compile(r"[\u4e00-\u9fff]{2,}")
 
+
+def safe_sync_to_echo_sight(echo_stats_pairs, status="completed", cost_class=4, main_stat_key="crit_rate", nickname=None, echo_id=None):
+    def worker():
+        try:
+            stat_map = {
+                "暴击伤害": "crit_dmg", "暴击": "crit_rate",
+                "大攻击": "atk_pct", "小攻击": "atk_flat", "攻击": "atk_flat", "攻击百分比": "atk_pct",
+                "大生命": "hp_pct", "小生命": "hp_flat", "生命": "hp_flat", "生命百分比": "hp_pct",
+                "大防御": "def_pct", "小防御": "def_flat", "防御": "def_flat", "防御百分比": "def_pct",
+                "共鸣效率": "energy_regen",
+                "普攻伤害加成": "basic_dmg",
+                "重击伤害加成": "heavy_dmg",
+                "共鸣解放伤害加成": "liberation_dmg",
+                "共鸣技能伤害加成": "skill_dmg",
+                "治疗效果加成": "healing_bonus", "冷凝伤害加成": "glacio_dmg", "热熔伤害加成": "fusion_dmg", "导电伤害加成": "electro_dmg", "气动伤害加成": "aero_dmg", "衍射伤害加成": "spectro_dmg", "湮灭伤害加成": "havoc_dmg"
+            }
+            
+            substats = []
+            for i, (prop_name_raw, prop_val) in enumerate(echo_stats_pairs):
+                cleaned_val = prop_val.replace('%', '').replace('％', '').strip()
+                val_float = float(cleaned_val) if cleaned_val.replace('.', '', 1).isdigit() else 0.0
+                has_pct = '%' in prop_val or '％' in prop_val
+                
+                cleaned_name = prop_name_raw.replace(" ", "")
+                if '攻击' in cleaned_name and cleaned_name != '攻击百分比':
+                    cleaned_name = '攻击百分比' if has_pct else '攻击'
+                elif '生命' in cleaned_name and cleaned_name != '生命百分比':
+                    cleaned_name = '生命百分比' if has_pct else '生命'
+                elif '防御' in cleaned_name and cleaned_name != '防御百分比':
+                    cleaned_name = '防御百分比' if has_pct else '防御'
+
+                mapped_key = stat_map.get(cleaned_name, cleaned_name)
+                
+                if has_pct:
+                    val_scaled = int(val_float * 10)
+                else:
+                    val_scaled = int(val_float)
+                
+                substats.append({
+                    "slot_no": i + 1,
+                    "stat_key": mapped_key,
+                    "value_scaled": val_scaled
+                })
+
+              
+            local_main_stat = main_stat_key
+            if local_main_stat in ["攻击", "生命", "防御"]:
+                local_main_stat = local_main_stat + "百分比"
+            parsed_main_stat = stat_map.get(local_main_stat.replace(" ", ""), "crit_rate") if local_main_stat else "crit_rate"
+
+            payload = {
+                "echo_id": echo_id if echo_id else f"auto_enh_{int(time.time()*1000)}",
+                "main_stat_key": parsed_main_stat,
+                "cost_class": int(cost_class) if str(cost_class).isdigit() else 4, 
+                "status": status,
+                "opened_slots_count": len(substats),
+                "substats": substats
+            }
+            if nickname:
+                payload["nickname"] = nickname
+            
+            logger.debug(f"[EchoSync] 准备发送声骸推送数据: {json.dumps(payload, ensure_ascii=False)}")
+            res = requests.post("http://127.0.0.1:8192/api/sync_echo", json=payload, timeout=1.0)
+            if res.status_code == 200:
+                logger.info("[EchoSync] 成功推送到 WuWa_Echo_Sight")
+            else:
+                logger.warning(f"[EchoSync] 推送失败，返回: {res.text}")
+        except requests.exceptions.ConnectionError:
+            logger.debug("[EchoSync] 同步服务未开启(Connection Refused)")
+        except requests.exceptions.Timeout:
+            logger.warning("[EchoSync] 同步服务响应超时!")
+        except Exception as e:
+            logger.error(f"[EchoSync] 未知错误: {e}")
+    
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
 
 class EnhanceEchoTask(BaseWWTask, FindFeature):
 
@@ -34,7 +115,8 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
             '首条双爆>=': 6.9,
             '有效词条>=': 3,
             '第一条必须为有效词条': True,
-            '有效词条': ['暴击', '暴击伤害', '攻击百分比']
+            '有效词条': ['暴击', '暴击伤害', '攻击百分比'],
+            '同步到EchoSight': True
         })
         self.config_type["有效词条"] = {'type': "multi_selection",
                                         'options': ['暴击伤害', '暴击', '攻击百分比', '生命百分比', '防御百分比',
@@ -50,6 +132,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
             '有效词条>=': '声骸满级时需达到的有效词条数量，若剩余孔位无法凑齐该数量，则停止强化并丢弃',
             '第一条必须为有效词条': '如果开启，第一个副词条必须在有效词条列表中且符合数值要求，否则直接丢弃',
             '有效词条': '定义哪些属性被视为有效',
+            '同步到EchoSight': '如果开启，在强化提取词条后会自动推送数据到本地 8192 端口供 WuWa_Echo_Sight 记录',
         }
 
     def find_echo_enhance(self):
@@ -82,6 +165,48 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
             start = time.time()
             while time.time() - start < 5:
                 if enhance:
+                    import uuid
+                    try:
+                        nickname_texts = self.ocr(1750/2560, 165/1440, 2450/2560, 215/1440)
+                        main_stat_texts = self.ocr(1840/2560, 570/1440, 2450/2560, 620/1440)
+                        cost_texts = self.ocr(2250/2560, 175/1440, 2550/2560, 425/1440)
+                        
+                        base_nickname = nickname_texts[0].name if nickname_texts else "未知声骸"
+                        self.current_nickname = f"{base_nickname}_{uuid.uuid4().hex[:6]}"
+                        
+                        self.current_main_stat = main_stat_texts[0].name if main_stat_texts else "未识别主词条"
+                        
+                        cost_str = ""
+                        has_cost_word = False
+                        if cost_texts:
+                            for t in cost_texts:
+                                cost_str += str(t.name)
+                                if 'COST' in str(t.name).upper() or '0' in str(t.name) or '+' in str(t.name):
+                                    has_cost_word = True
+                        
+                        match = re.search(r'[134lI\|]', cost_str)
+                        if match:
+                            val = match.group(0)
+                            if val in ['3', '4']:
+                                self.current_cost = int(val)
+                            else:
+                                self.current_cost = 1
+                        elif has_cost_word:
+                            # PaddleOCR consistently drops the single bare vertical line '1' as noise
+                            # But reliably recognizes the thick '3' and '4'.
+                            # If we see "COST" or "+0" but no number, it's virtually guaranteed to be a 1-cost.
+                            self.current_cost = 1
+                        else:
+                            self.current_cost = 4
+                        
+                        logger.debug(f"[EchoSight准备] 识别到名称: {self.current_nickname} | 主词条: {self.current_main_stat} | Cost: {self.current_cost}")
+                    except Exception as e:
+                        logger.error(f"[EchoSight准备] 读取基础数据失败: {e}")
+                        self.current_nickname = f"未知声骸_{uuid.uuid4().hex[:6]}"
+                        self.current_main_stat = "未识别主词条"
+                        self.current_cost = 4
+                
+                    self.current_echo_id = f"auto_enh_{str(uuid.uuid4())}"
                     self.click(enhance, after_sleep=0.5)
                 enhance = self.find_echo_enhance()
                 if not enhance:
@@ -134,11 +259,20 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                 self.info_set('属性', properties)
                 self.info_set('值', values)
 
-                if not self.check_echo_stats(properties, values):
+                is_valid = self.check_echo_stats(properties, values)
+                
+                if hasattr(self, 'last_paired_stats') and self.config.get('同步到EchoSight', True):
+                    safe_sync_to_echo_sight(self.last_paired_stats, status="tracking", cost_class=getattr(self, "current_cost", 4), main_stat_key=getattr(self, "current_main_stat", "crit_rate"), nickname=getattr(self, "current_nickname", "未知声骸"), echo_id=getattr(self, "current_echo_id", None))
+
+                if not is_valid:
+                    if hasattr(self, 'last_paired_stats') and self.config.get('同步到EchoSight', True):
+                        safe_sync_to_echo_sight(self.last_paired_stats, status="abandoned", cost_class=getattr(self, "current_cost", 4), main_stat_key=getattr(self, "current_main_stat", "crit_rate"), nickname=getattr(self, "current_nickname", "未知声骸"), echo_id=getattr(self, "current_echo_id", None))
                     self.trash_and_esc()
                     break
 
                 if len(properties) >= 5:
+                    if hasattr(self, 'last_paired_stats') and self.config.get('同步到EchoSight', True):
+                        safe_sync_to_echo_sight(self.last_paired_stats, status="completed", cost_class=getattr(self, "current_cost", 4), main_stat_key=getattr(self, "current_main_stat", "crit_rate"), nickname=getattr(self, "current_nickname", "未知声骸"), echo_id=getattr(self, "current_echo_id", None))
                     self.lock_and_esc()
                     break
 
@@ -162,6 +296,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
             paired_stats.append((prop.name, matched_val_text))
 
         total_count = len(paired_stats)
+        self.last_paired_stats = paired_stats
 
         crit_rate_val = 0
         crit_dmg_val = 0
@@ -333,3 +468,13 @@ def parse_number(text):
         return float(text.replace('％', '%').split('%')[0])
     except (ValueError, IndexError):
         return 0.0
+
+
+
+
+
+
+
+
+
+
