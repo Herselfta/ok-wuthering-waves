@@ -64,7 +64,7 @@ class Jinhsi(BaseChar):
             if time.time() - start > 6:
                 self.logger.info(f'handle incarnation too long')
                 break
-            if self.task.in_team()[0]:
+            if self.task.in_team():
                 if last_op == 'resonance':
                     self.task.click(interval=0.1)
                     last_op = 'click'

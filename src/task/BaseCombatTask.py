@@ -344,7 +344,7 @@ class BaseCombatTask(CombatCheck):
                 self.check_combat()
             now = time.time()
             current_char.f_break(check_f_on_switch=True)
-            _, current_index, _ = self.in_team()
+            _, current_index, _ = self.get_team_state()
             if current_index == current_char.index:
                 self.update_lib_portrait_icon()
                 if not switch_to.has_intro:
@@ -357,7 +357,7 @@ class BaseCombatTask(CombatCheck):
                 self.log_debug('switch not detected, send click')
                 self.click()
                 self.sleep(0.001)
-            in_team, current_index, size = self.in_team()
+            in_team, current_index, size = self.get_team_state()
             if not in_team:
                 logger.info(f'not in team while switching chars_{current_char}_to_{switch_to} {now - start}')
                 # if self.debug:
@@ -456,7 +456,7 @@ class BaseCombatTask(CombatCheck):
         for char in self.chars:
             if char and char.is_current_char:
                 return char
-        if raise_exception and not self.in_team()[0]:
+        if raise_exception and not self.in_team():
             self.raise_not_in_combat('can find current char!!')
         # self.load_chars()
         return None
@@ -524,7 +524,7 @@ class BaseCombatTask(CombatCheck):
     def load_chars(self):
         """加载队伍中的角色信息。"""
         self.load_hotkey()
-        in_team, current_index, count = self.in_team()
+        in_team, current_index, count = self.get_team_state()
         if not in_team:
             return
         # self.log_info('load chars')

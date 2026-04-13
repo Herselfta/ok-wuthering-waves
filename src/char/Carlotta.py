@@ -94,7 +94,7 @@ class Carlotta(BaseChar):
                 return False
             self.task.next_frame()
         if clicked:
-            if self.task.wait_until(lambda: not self.task.in_team()[0], time_out=0.4,
+            if self.task.wait_until(lambda: not self.task.in_team(), time_out=0.4,
                                     post_action=self.click_with_interval):
                 self.task.in_liberation = True
                 self.logger.debug('not in_team successfully casted liberation')
@@ -105,7 +105,7 @@ class Carlotta(BaseChar):
         else:
             return clicked
         start = time.time()
-        while not self.task.in_team()[0]:
+        while not self.task.in_team():
             self.task.in_liberation = True
             if not clicked:
                 clicked = True

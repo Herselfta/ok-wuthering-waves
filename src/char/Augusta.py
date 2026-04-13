@@ -73,15 +73,15 @@ class Augusta(BaseChar):
         self.task.in_liberation = True
         if wait_down:
             time_out = 0.2
-            self.task.wait_until(lambda: not self.task.in_team()[0] or not self.flying(), time_out=2)
-        self.task.wait_until(lambda: not self.task.in_team()[0], time_out=time_out)
+            self.task.wait_until(lambda: not self.task.in_team() or not self.flying(), time_out=2)
+        self.task.wait_until(lambda: not self.task.in_team(), time_out=time_out)
         start = time.time()
         self.task.send_key_up(self.get_liberation_key())
-        if self.task.in_team()[0]:
+        if self.task.in_team():
             self.logger.debug('Augusta performs majesty failed: not in animation')
             self.task.in_liberation = False
             return False
-        self.task.wait_until(lambda: self.task.in_team()[0], post_action=self.click, time_out=10)
+        self.task.wait_until(lambda: self.task.in_team(), post_action=self.click, time_out=10)
         self.add_freeze_duration(start, time.time() - start)
         self.logger.info(f'click_liberation end {time.time() - start}')
 

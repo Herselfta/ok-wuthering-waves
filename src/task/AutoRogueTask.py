@@ -68,7 +68,7 @@ class AutoRogueTask(WWOneTimeTask, BaseCombatTask):
         exit_countdown = -1
         while True:
             # 非战斗处理
-            in_team = self.in_team()[0]
+            in_team = self.get_team_state()
             if in_team:
                 now = time.time()
                 if exit_countdown < 0:

@@ -380,17 +380,16 @@ class BaseWWTask(BaseTask):
     def in_realm(self):
         return not bool(getattr(self, 'treat_as_not_in_realm', False)) and self.find_one('illusive_realm_exit',
                                                                                          threshold=0.7,
-                                                                                         frame_processor=convert_bw) and self.in_team()[0] and not self.has_world_icon()
+                                                                                         frame_processor=convert_bw) and self.in_team() and not self.has_world_icon()
 
     def in_world(self):
-        return self.has_world_icon() and self.in_team()[0] and not self.find_one('illusive_realm_exit',
+        return self.has_world_icon() and self.in_team() and not self.find_one('illusive_realm_exit',
                                                                                  threshold=0.7,
                                                                                  frame_processor=convert_bw)
 
     def has_world_icon(self):
         return self.find_one('world_earth_icon', threshold=0.55,
-                             frame_processor=convert_bw) or self.find_one('multiplayer_world_mark', threshold=0.55,
-                                                                           frame_processor=convert_bw)
+                             frame_processor=convert_bw)
 
     def in_illusive_realm(self):
         return self.find_one('new_realm_4') and self.in_realm() and self.find_one('illusive_realm_menu', threshold=0.6)
@@ -540,7 +539,7 @@ class BaseWWTask(BaseTask):
             return True
 
     def has_claim(self):
-        return not self.in_team()[0] and self.find_one('claim_cancel_button_hcenter_vcenter', horizontal_variance=0.05,
+        return not self.in_team() and self.find_one('claim_cancel_button_hcenter_vcenter', horizontal_variance=0.05,
                                                        vertical_variance=0.1, threshold=0.8)
 
     def test_absorb(self):
@@ -750,8 +749,7 @@ class BaseWWTask(BaseTask):
                 return False
 
     def in_team_and_world(self):
-        return self.in_team()[
-            0]  # and self.find_one(f'gray_book_button', threshold=0.7, canny_lower=50, canny_higher=150)
+        return self.in_team()  # and self.find_one(f'gray_book_button', threshold=0.7, canny_lower=50, canny_higher=150)
 
     def get_angle_between(self, my_angle, angle):
         if my_angle > angle:
@@ -883,7 +881,7 @@ class BaseWWTask(BaseTask):
 
         return current_direction, current_adjust, False
 
-    def in_team(self):
+    def get_team_state(self):
         c1 = self.find_one('char_1_text',
                            threshold=0.8)
         c2 = self.find_one('char_2_text',
@@ -891,7 +889,7 @@ class BaseWWTask(BaseTask):
         c3 = self.find_one('char_3_text',
                            threshold=0.8)
         arr = [c1, c2, c3]
-        # logger.debug(f'in_team check {arr}')
+        # logger.debug(f'get_team_state check {arr}')
         current = -1
         exist_count = 0
         for i in range(len(arr)):
@@ -903,11 +901,11 @@ class BaseWWTask(BaseTask):
         if exist_count == 2 or (exist_count == 1 and current != -1):
             self._logged_in = True
             return True, current, exist_count + 1
-        elif self.find_one('multiplayer_world_mark', threshold=0.6, frame_processor=convert_bw):
-            self._logged_in = True
-            return True, max(0, current), max(1, exist_count + 1)
         else:
             return False, -1, exist_count + 1
+
+    def in_team(self):
+        return self.get_team_state()[0]
 
         # Function to check if a component forms a ring
 
@@ -1008,11 +1006,11 @@ class BaseWWTask(BaseTask):
         return gray_book_boss
 
     def check_main(self):
-        if not self.in_team()[0]:
+        if not self.in_team():
             self.click_relative(0, 0)
             self.send_key('esc')
             self.sleep(1)
-            if not self.in_team()[0]:
+            if not self.in_team():
                 raise Exception('must be in game world and in teams')
         return True
 

@@ -303,7 +303,7 @@ class BaseChar:
                 self.task.in_liberation = False
                 break
             if has_animation:
-                if not self.task.in_team()[0]:
+                if not self.task.in_team():
                     self.task.in_liberation = True
                     animation_start = time.time()
                     the_time_out = SKILL_TIME_OUT
@@ -518,7 +518,7 @@ class BaseChar:
                     self.task.raise_not_in_combat('too long clicking a liberation')
                 self.task.next_frame()
             if clicked:
-                if self.task.wait_until(lambda: not self.task.in_team()[0], time_out=0.4,
+                if self.task.wait_until(lambda: not self.task.in_team(), time_out=0.4,
                                         post_action=self.click_with_interval):
                     self.task.in_liberation = True
                     self.logger.debug(f'not in_team successfully casted liberation')
@@ -530,13 +530,13 @@ class BaseChar:
                 start = time.time()
                 while not self.has_cd('liberation') and time.time() - start < wait_if_cd_ready:
                     self.send_liberation_key(after_sleep=0.05)
-                    if self.task.wait_until(lambda: not self.task.in_team()[0], time_out=0.1):
+                    if self.task.wait_until(lambda: not self.task.in_team(), time_out=0.1):
                         self.task.in_liberation = True
                         self.logger.debug(f'not in_team successfully casted liberation')
                 if not self.task.in_liberation:
                     return False
         start = time.time()
-        while not self.task.in_team()[0]:
+        while not self.task.in_team():
             self.task.in_liberation = True
             if not clicked:
                 clicked = True
@@ -909,7 +909,7 @@ class BaseChar:
         self.logger.debug(f'{self.char_name} on_combat_end {self.index} switch next char: {next_char}')
         start = time.time()
         while time.time() - start < 6:
-            in_team, current_index, count = self.task.in_team()
+            in_team, current_index, count = self.task.get_team_state()
             if in_team and current_index != self.index:
                 for char in self.task.chars:
                     if char:

@@ -200,10 +200,10 @@ class CombatCheck(BaseWWTask):
         if levi := self.find_one('edge_levitator', threshold=0.6):
             self.log_debug('recheck edge levitator found {}'.format(levi))
             return True
-        while time.time() - start < 1 and self.in_team()[0]:
+        while time.time() - start < 1 and self.in_team():
             self.send_key_down(self.key_config.get('Wheel Key'))
             self.sleep(0.4)
-        if self.in_team()[0]:
+        if self.in_team():
             self.log_info('can not open wheel')
             self.send_key_up(self.key_config.get('Wheel Key'))
             self.sleep(0.1)

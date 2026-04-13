@@ -109,7 +109,7 @@ class Changli(BaseChar):
             if send_click:
                 self.click(interval=0.1)
             self.task.next_frame()
-        while self.liberation_available() and self.task.in_team()[0]:  # clicked and still in team wait for animation
+        while self.liberation_available() and self.task.in_team():  # clicked and still in team wait for animation
             self.logger.debug('click_liberation liberation_available click')
             now = time.time()
             if now - last_click > 0.1:
@@ -122,7 +122,7 @@ class Changli(BaseChar):
                 self.task.raise_not_in_combat('too long clicking a liberation')
             self.task.next_frame()
         if clicked:
-            if self.task.wait_until(lambda: not self.task.in_team()[0], time_out=0.4):
+            if self.task.wait_until(lambda: not self.task.in_team(), time_out=0.4):
                 self.task.in_liberation = True
                 self.logger.debug('not in_team successfully casted liberation')
             else:
@@ -131,7 +131,7 @@ class Changli(BaseChar):
                 return False
         start = time.time()
         hold = False
-        while not self.task.in_team()[0]:
+        while not self.task.in_team():
             self.task.in_liberation = True
             if not clicked:
                 clicked = True
@@ -150,8 +150,8 @@ class Changli(BaseChar):
         self.task.in_liberation = False
         if clicked:
             self.logger.info(f'click_liberation end {duration}')
-            self.task.wait_until(lambda: self.task.in_team()[0] and self.is_mouse_forte_full(), time_out=0.6)
-            self.task.wait_until(lambda: self.task.in_team()[0] and not self.is_mouse_forte_full(), time_out=0.6)
+            self.task.wait_until(lambda: self.task.in_team() and self.is_mouse_forte_full(), time_out=0.6)
+            self.task.wait_until(lambda: self.task.in_team() and not self.is_mouse_forte_full(), time_out=0.6)
         self.task.mouse_up()
         self.check_combat()
         return clicked

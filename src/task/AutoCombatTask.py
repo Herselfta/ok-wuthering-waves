@@ -66,7 +66,7 @@ class AutoCombatTask(BaseCombatTask, TriggerTask):
                 self.send_key(self.get_echo_key())
             elif self.available('resonance'):
                 self.send_key(self.get_resonance_key())
-            elif self.is_con_full() and self.in_team()[0]:
+            elif self.is_con_full() and self.in_team():
                 self.send_key_and_wait_animation('2', self.in_illusive_realm)
         self.last_is_click = not self.last_is_click
         self.op_index += 1
