@@ -664,7 +664,7 @@ class BaseWWTask(BaseTask):
             self.send_key(direction, down_time=0.05, after_sleep=0.5)
         self.center_camera()
 
-    def walk_find_echo(self, backward_time=1, time_out=3):
+    def walk_find_echo(self, backward_time=3, time_out=5):
         if self.walk_until_f(time_out=time_out, backward_time=backward_time, target_text=self.absorb_echo_text(),
                              raise_if_not_found=False, check_combat=True):  # find and pick echo
             logger.debug(f'farm echo found echo move forward walk_until_f to find echo')
