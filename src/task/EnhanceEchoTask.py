@@ -263,6 +263,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                 
                 if hasattr(self, 'last_paired_stats') and self.config.get('同步到EchoSight', True):
                     safe_sync_to_echo_sight(self.last_paired_stats, status="tracking", cost_class=getattr(self, "current_cost", 4), main_stat_key=getattr(self, "current_main_stat", "crit_rate"), nickname=getattr(self, "current_nickname", "未知声骸"), echo_id=getattr(self, "current_echo_id", None))
+                    time.sleep(0.01)
 
                 if not is_valid:
                     if hasattr(self, 'last_paired_stats') and self.config.get('同步到EchoSight', True):
