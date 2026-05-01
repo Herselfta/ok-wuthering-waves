@@ -5062,12 +5062,12 @@
             "image_id": 194,
             "category_id": 135,
             "bbox": [
-                1210,
-                242,
-                46,
-                49
+                1052,
+                285,
+                88,
+                88
             ],
-            "area": 2254,
+            "area": 7744,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -5077,12 +5077,12 @@
             "image_id": 194,
             "category_id": 133,
             "bbox": [
-                1322,
-                245,
-                41,
-                44
+                1241,
+                285,
+                88,
+                88
             ],
-            "area": 1804,
+            "area": 7744,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -5092,12 +5092,12 @@
             "image_id": 196,
             "category_id": 128,
             "bbox": [
-                1210,
-                242,
-                46,
-                49
+                1052,
+                285,
+                88,
+                88
             ],
-            "area": 2254,
+            "area": 7744,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -5107,12 +5107,12 @@
             "image_id": 196,
             "category_id": 136,
             "bbox": [
-                1322,
-                245,
-                41,
-                44
+                1241,
+                285,
+                88,
+                88
             ],
-            "area": 1804,
+            "area": 7744,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []

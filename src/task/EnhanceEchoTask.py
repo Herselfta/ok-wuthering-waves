@@ -167,9 +167,9 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                 if enhance:
                     import uuid
                     try:
-                        nickname_texts = self.ocr(1750/2560, 165/1440, 2450/2560, 215/1440)
-                        main_stat_texts = self.ocr(1840/2560, 570/1440, 2450/2560, 620/1440)
-                        cost_texts = self.ocr(2250/2560, 175/1440, 2550/2560, 425/1440)
+                        nickname_texts = self.ocr(1750/2560, 165/1440, 2450/2560, 220/1440)
+                        main_stat_texts = self.ocr(1820/2560, 610/1440, 2150/2560, 655/1440)
+                        cost_texts = self.ocr(1890/2560, 330/1440, 1930/2560, 370/1440)
                         
                         base_nickname = nickname_texts[0].name if nickname_texts else "未知声骸"
                         self.current_nickname = f"{base_nickname}_{uuid.uuid4().hex[:6]}"
@@ -248,7 +248,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                     else:
                         self.sleep(0.5)
                 self.sleep(0.1)
-                texts = self.ocr(0.09, 0.28, 0.40, 0.53)
+                texts = self.ocr(285/2560, 450/1440, 880/2560, 740/1440)
                 self.log_info(f'ocr values: {texts}')
                 properties = [p for p in self.find_boxes(texts, match=property_pattern) if '辅音' not in p.name]
                 for p in properties:
@@ -419,8 +419,15 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
         start = time.time()
         success = False
         while time.time() - start < 5:
-            drop_status = self.find_best_match_in_box(self.get_box_by_name('echo_dropped').scale(1.05),
-                                                      ['echo_dropped', 'echo_not_dropped'], threshold=0.7)
+            search_box = self.get_box_by_name('echo_dropped').scale(1.05)
+            drop_status = self.find_best_match_in_box(search_box,
+                                                      ['echo_dropped', 'echo_not_dropped'], threshold=0.6)
+            
+            if drop_status:
+                self.log_info(f"🔍 识别到状态: {drop_status.name}, 置信度: {drop_status.confidence:.2f}, 坐标: [{drop_status.x}, {drop_status.y}]")
+            else:
+                self.log_info(f"❓ 未能识别到弃置状态，搜索区域: [{search_box.x}, {search_box.y}, {search_box.width}, {search_box.height}]")
+
             if not drop_status:
                 raise Exception('无法找到声骸弃置状态!')
             if drop_status.name == 'echo_not_dropped':
