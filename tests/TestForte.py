@@ -31,9 +31,13 @@ class TestForte(TaskTestCase):
         self.set_image('tests/images/33_forte_2.png')
         self.task.load_chars()
         forte = self.task.find_mouse_forte()
-        self.task.sleep(1)
-        self.task.screenshot('forte', show_box=True)
-        self.task.sleep(1)
+        self.assertIsNotNone(forte)
+
+    def test_forte5(self):
+        self.task.do_reset_to_false()
+        self.set_image('tests/images/33_forte_3.png')
+        self.task.load_chars()
+        forte = self.task.find_mouse_forte()
         self.assertIsNotNone(forte)
 
     def test_forte3(self):
