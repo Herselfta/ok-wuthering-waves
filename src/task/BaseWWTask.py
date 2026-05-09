@@ -445,13 +445,14 @@ class BaseWWTask(BaseTask):
             used = once
             x = 0.32
             logger.info(f"使用单倍体力")
-        self.click(x, y, after_sleep=0.5)
+        self.click(x, y, after_sleep=1)
         if self.wait_feature('gem_add_stamina', horizontal_variance=0.4, vertical_variance=0.05,
-                             time_out=1):  # 看是否需要使用备用体力
-            self.click(0.70, 0.71, after_sleep=0.5)  # 点击确认
+                             time_out=2):  # 看是否需要使用备用体力
+            self.click(0.70, 0.71, after_sleep=1)  # 点击确认
             self.click(0.70, 0.71, after_sleep=1)
-            self.back(after_sleep=0.5)
-            self.click(x, y, after_sleep=0.5)
+            self.back(after_sleep=1)
+            self.back(after_sleep=1)
+            self.click(x, y, after_sleep=1)
 
         current -= used
         must_use -= used
@@ -717,7 +718,7 @@ class BaseWWTask(BaseTask):
                 self._logged_in = True
                 return True
             self.handle_monthly_card()
-            if login_close := self.find_one('login_close', horizontal_variance=0.1, vertical_variance=0.1):
+            if login_close := self.find_one('login_close', horizontal_variance=0.15, vertical_variance=0.1):
                 self.click(login_close, after_sleep=1)
                 self.log_info('关闭公告!')
                 return False
@@ -982,6 +983,8 @@ class BaseWWTask(BaseTask):
             if self.find_one(feature_name, threshold=0.7):
                 self.sleep(0.5)
                 feature = self.find_one(feature_name, threshold=0.7)
+                if not feature:
+                    continue
                 self.click(feature, after_sleep=1)
                 if feature.name == 'fast_travel_custom':
                     if confirm := self.wait_feature(
