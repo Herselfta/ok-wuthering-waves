@@ -116,7 +116,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
             '有效词条>=': 3,
             '第一条必须为有效词条': True,
             '有效词条': ['暴击', '暴击伤害', '攻击百分比'],
-            '同步到EchoSight': True
+            '同步到EchoSight': True,
             'Pause after Success': True,
         })
         self.config_type["有效词条"] = {'type': "multi_selection",
