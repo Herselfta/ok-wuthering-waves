@@ -1117,12 +1117,12 @@
         },
         {
             "id": 221,
-            "name": "message",
+            "name": "account_drop_down",
             "supercategory": ""
         },
         {
             "id": 222,
-            "name": "message_dialog",
+            "name": "message",
             "supercategory": ""
         },
         {
@@ -1158,6 +1158,11 @@
         {
             "id": 229,
             "name": "char_moning_new",
+            "supercategory": ""
+        },
+        {
+            "id": 230,
+            "name": "message_dialog",
             "supercategory": ""
         }
     ],
@@ -2178,6 +2183,12 @@
             "file_name": "images/34.png",
             "width": 1920,
             "height": 1080
+        },
+        {
+            "id": 241,
+            "file_name": "images/39.png",
+            "width": 2048,
+            "height": 1152
         }
     ],
     "annotations": [
@@ -2198,15 +2209,15 @@
         },
         {
             "id": 1,
-            "image_id": 240,
+            "image_id": 241,
             "category_id": 221,
             "bbox": [
-                405,
-                42,
-                42,
-                34
+                1273,
+                496,
+                60,
+                58
             ],
-            "area": 1428,
+            "area": 3480,
             "iscrowd": 0
         },
         {
@@ -2229,12 +2240,12 @@
             "image_id": 240,
             "category_id": 222,
             "bbox": [
-                434,
-                642,
-                47,
-                30
+                409,
+                46,
+                37,
+                26
             ],
-            "area": 1410,
+            "area": 962,
             "iscrowd": 0
         },
         {
@@ -3377,6 +3388,19 @@
                 43
             ],
             "area": 1849,
+            "iscrowd": 0
+        },
+        {
+            "id": 86,
+            "image_id": 240,
+            "category_id": 230,
+            "bbox": [
+                434,
+                637,
+                50,
+                36
+            ],
+            "area": 1800,
             "iscrowd": 0
         },
         {

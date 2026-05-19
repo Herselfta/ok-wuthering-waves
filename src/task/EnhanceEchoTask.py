@@ -11,6 +11,7 @@ import traceback
 from qfluentwidgets import FluentIcon
 
 from ok import FindFeature, Logger
+from ok.feature.Box import get_bounding_box
 from ok.util.file import clear_folder
 from src.scene.WWScene import WWScene
 from src.task.BaseWWTask import BaseWWTask
@@ -281,7 +282,7 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
 
     def find_confirm(self):
         box = self.box_of_screen(0.24, 0.18, 0.75, 0.93)
-        self.screenshot('find_confirm', frame=box.crop_frame(self.frame))
+        # self.screenshot('find_confirm', frame=box.crop_frame(self.frame))
         return self.ocr(box=box, match='确认')
 
     def check_echo_stats(self, properties, values):
@@ -454,8 +455,12 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
         self.info_incr('成功声骸数量')
         start = time.time()
         success = False
+        lock_status_box = get_bounding_box([
+            self.get_box_by_name('echo_locked'),
+            self.get_box_by_name('echo_not_locked'),
+        ]).scale(1.05)
         while time.time() - start < 5:
-            drop_status = self.find_best_match_in_box(self.get_box_by_name('echo_locked').scale(1.05),
+            drop_status = self.find_best_match_in_box(lock_status_box,
                                                       ['echo_locked', 'echo_not_locked'], threshold=0.7)
             if not drop_status:
                 raise Exception('无法找到声骸上锁状态!')
