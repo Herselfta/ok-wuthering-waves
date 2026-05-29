@@ -475,7 +475,7 @@ class BaseCombatTask(CombatCheck):
             if not (isinstance(switch_to, ShoreKeeper) and has_intro):
                 self.check_combat()
             now = time.time()
-            _, current_index, _ = self.in_team()
+            _, current_index, _ = self.get_team_state()
             if current_index == current_char.index:
                 self.update_lib_portrait_icon()
                 refreshed_has_intro = has_intro or current_char.is_con_full()
