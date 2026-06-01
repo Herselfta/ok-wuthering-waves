@@ -160,7 +160,7 @@ config = {
     'windows': {  # required  when supporting windows game
         'top_hwnd_class': [re.compile('CAgreementDlg'), re.compile('CLoginDlg_P_'),
                            'CefBrowserWindow', 'Chrome_RenderWidgetHostHWND',
-                           re.compile('CNativeLoginDlg'), '#32770', 'Static', 'ComboBox', 'ComboLBox', 'Button'
+                           re.compile('CNativeLoginDlg'), 'Static', 'ComboBox', 'ComboLBox', 'Button'
                            ],
         'calculate_pc_exe_path': calculate_pc_exe_path,
         'exe': 'Client-Win64-Shipping.exe',
@@ -195,9 +195,9 @@ config = {
             'github': 'https://github.com/ok-oldking/ok-wuthering-waves',
             'discord': 'https://discord.gg/vVyCatEBgA',
             'sponsor': 'https://afdian.com/a/ok-oldking',
-            'share': 'OK-WW 百度网盘 https://pan.baidu.com/s/102Mh1djq2B1T-cIJhct9Gg?pwd=okww 夸克网盘 https://pan.quark.cn/s/418018ddf7a0 不定期更新最新版 GitHub下载: https://github.com/ok-oldking/ok-wuthering-waves/releases/latest',
+            'share': 'GitHub: https://github.com/ok-oldking 百度网盘: https://pan.baidu.com/s/102Mh1djq2B1T-cIJhct9Gg?pwd=okww 夸克网盘: https://pan.quark.cn/s/418018ddf7a0 Mirror酱：https://mirrorchyan.com/zh/projects?source=okbilibili',
             'faq': 'https://cnb.cool/ok-oldking/ok-wuthering-waves/-/blob/main/README.md',
-            'qq_group': 'https://qm.qq.com/q/QUMHZ9IJYO',
+            'qq_group': 'https://qm.qq.com/q/8B7ymbaBR6',
             'qq_channel': 'https://pd.qq.com/s/djmm6l44y',
         },
     },
@@ -240,6 +240,12 @@ config = {
         ["src.task.MouseResetTask", "MouseResetTask"],
         ["src.task.FastTravelTask", "FastTravelTask"],
     ], 'scene': ["src.scene.WWScene", "WWScene"],
+    'update_pyappify': {
+        'to_version': '1.1.3',
+        'zip_url': 'https://github.com/ok-oldking/ok-wuthering-waves/releases/download/v3.3.60/ok-ww-win32.zip',
+        'sha256': '89465b720ffcba46d5c6b71409835a9bb2d9adcf9c6f7d52d8e940a0e915446e',
+    }
+
 }
 
 # 启动后台画质监控守护进程
