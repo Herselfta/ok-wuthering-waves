@@ -25,6 +25,23 @@ f_white_color = {
 processed_feature = False
 
 
+class TeamStateCompat(int):
+    def __new__(cls, value, state_tuple):
+        return super().__new__(cls, 1 if value else 0)
+
+    def __init__(self, value, state_tuple):
+        self.state_tuple = state_tuple
+
+    def __getitem__(self, item):
+        return self.state_tuple[item]
+
+    def __iter__(self):
+        return iter(self.state_tuple)
+
+    def __len__(self):
+        return len(self.state_tuple)
+
+
 class BaseWWTask(BaseTask):
     map_zoomed = False
 
@@ -912,7 +929,8 @@ class BaseWWTask(BaseTask):
             return False, -1, exist_count + 1
 
     def in_team(self):
-        return self.get_team_state()[0]
+        state = self.get_team_state()
+        return TeamStateCompat(state[0], state)
 
         # Function to check if a component forms a ring
 
