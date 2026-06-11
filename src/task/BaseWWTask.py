@@ -932,7 +932,7 @@ class BaseWWTask(BaseTask):
                     current = i
             else:
                 exist_count += 1
-        if exist_count == 2 or exist_count == 1:
+        if exist_count == 2 or (exist_count == 1 and current != -1):
             self.logged_in = True
             return True, current, exist_count + 1
         else:
