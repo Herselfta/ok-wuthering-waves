@@ -3,8 +3,7 @@ import re
 from qfluentwidgets import FluentIcon
 
 from ok import Logger, TaskDisabledException
-from src.Labels import Labels
-from src.task.BaseWWTask import number_re, stamina_re
+from src.task.BaseWWTask import number_re
 from src.task.FarmEchoTask import FarmEchoTask
 from src.task.ForgeryTask import ForgeryTask
 from src.task.NightmareNestTask import NightmareNestTask
@@ -139,6 +138,7 @@ class DailyTask(WWOneTimeTask, BaseCombatTask):
         self.log_info('open_daily')
         gray_book_quest = self.openF2Book("gray_book_quest")
         self.click_box(gray_book_quest, after_sleep=1.5)
+        self.click(0.17, 0.12, after_sleep=1)
         progress = self.ocr(0.1, 0.1, 0.5, 0.75, match=re.compile(r'^(\d+)/180$'))
         if not progress:
             self.click(0.974, 0.6, after_sleep=1)
@@ -149,6 +149,7 @@ class DailyTask(WWOneTimeTask, BaseCombatTask):
             current = 0
         self.info_set('current daily progress', current)
         return current, self.get_total_daily_points() >= 100
+        # 请注意：如果任务【累计消耗180点结晶波片】已完成，current 也可能为 0，因为翻页后也有可能识别不到已用体力。
 
     def get_total_daily_points(self):
         points_boxes = self.ocr(0.19, 0.8, 0.30, 0.93, match=number_re)
