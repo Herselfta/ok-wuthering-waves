@@ -561,10 +561,6 @@ msgstr "던전/월드에서 4코스트 에코 파밍"
 msgid "Combat Wait Time"
 msgstr "전투 대기 시간 (초)"
 
-msgid ""
-"Wait time before each combat(seconds), set 5 if farming Sentry Construct"
-msgstr "각 전투 전 대기 시간(초). 이성 무장 파밍 시 5로 설정하세요."
-
 msgid "Simulation Challenge"
 msgstr "시뮬레이션 영역"
 
@@ -805,11 +801,8 @@ msgstr "텔레포트할 주간 보스 번호"
 msgid "Which Boss Challenge to Teleport"
 msgstr "텔레포트할 보스 도전 번호"
 
-msgid "For Example, Denia, From Top to Bottom, Starting with 1"
-msgstr "예: Denia, 위에서 아래로, 1부터 시작"
-
-msgid "For Example, Nameless Explorer, From Top to Bottom, Starting with 1"
-msgstr "예: Nameless Explorer, 위에서 아래로, 1부터 시작"
+msgid "From Top to Bottom, Starting with 1"
+msgstr "위에서 아래로, 1부터 시작"
 
 msgid "Characters"
 msgstr "캐릭터"

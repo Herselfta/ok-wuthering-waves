@@ -104,6 +104,7 @@ class BaseChar:
         self.cycle_start_time = 0.0
         self.cycle_time_out = 1.1
         self.cycle_intro_time = 1.2
+        self.target_box_short_combat_check = False
 
     def set_char_type(self, char_type=CharType.MAIN_DPS):
         """设置角色定位，默认为主输出。"""
@@ -906,9 +907,9 @@ class BaseChar:
 
     def is_first_engage(self):
         """判断角色是否为触发战斗时的登场角色。"""
-        result = (0 <= self.last_perform - self.task.combat_start < 0.1)
+        result = (0 <= self.last_perform - self.task.combat_start < 0.4)
         if result:
-            self.logger.info(f'first engage')
+            self.logger.info('first engage')
         return result
 
     def wait_switch(self):

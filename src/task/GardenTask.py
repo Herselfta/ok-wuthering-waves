@@ -39,6 +39,7 @@ class GardenTask(WWOneTimeTask, BaseWWTask):
             return
         self.click(0.246, 0.486, after_sleep=1)
         while True:
+            self.sleep(0.1)
             target = self.find_best_garden_feature()
             self.sleep(0.2)
             if target:
@@ -59,6 +60,9 @@ class GardenTask(WWOneTimeTask, BaseWWTask):
                     self.click(not_interested[-1], after_sleep=1)
                     self.click(self.get_box_by_name('garden_not_interested_confirm'), after_sleep=1)
                     continue
+                elif target.name == 'garden_start_game':
+                    # At Garden Entrance, choose blessing1
+                    self._choose_first_blessing()
                 self.log_info(f"click {target.name} {target.confidence:.3f}")
                 self.click(target, after_sleep=1)
             else:
@@ -82,8 +86,8 @@ class GardenTask(WWOneTimeTask, BaseWWTask):
         self.openF2Book('gray_book_quest')
         self.sleep(1)
         self.click(0.343, 0.129, after_sleep=1)
+        self.click(0.927, 0.893, after_sleep=3)
         self.click(0.927, 0.893, after_sleep=2)
-        self.click(0.927, 0.893, after_sleep=1)
 
     def is_weekly_garden_completed(self):
         current = self.ocr(0.102, 0.793, 0.284, 0.956, match=self.GARDEN_TARGET_POINTS)
@@ -114,6 +118,14 @@ class GardenTask(WWOneTimeTask, BaseWWTask):
                 return max(priority_matches, key=lambda box: box.confidence)
         return max(matches, key=lambda box: box.confidence, default=None)
 
+    def _choose_first_blessing(self):
+        """At Garden Entrance, choose first blessing"""
+        # click blessing botton
+        self.click(965/1920, 860/1080, after_sleep=2)
+        # choose blessing1(Add-on)
+        self.click(700/1920, 666/1080, after_sleep=2)
+        # confirm
+        self.click(1600/1920, 900/1080, after_sleep=2)
 
 if __name__ == "__main__":
     run_task(config, task=GardenTask, debug=True)

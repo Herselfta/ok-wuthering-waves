@@ -217,26 +217,34 @@ class BaseCombatTask(CombatCheck):
             logger.error(f'revive_action failed', e)
             return False
 
-    def revive_at_tower_and_heal(self):
-        """搜索无冠者→探测打开地图→找最近传送点回血。
+    def get_revive_search_boss_name(self):
+        revive_search_names = {
+            'zh_CN': '无冠者',
+            'zh_TW': '無冠者',
+            'en_US': 'Crownless',
+        }
+        return revive_search_names.get(self.game_lang, '无冠者')
 
-        不再依赖已被移除的 go_to_tower。改用 F2 图鉴搜索"无冠者"后点"探测"，
+    def revive_at_tower_and_heal(self):
+        """搜索对应语言的无冠者/Crownless→探测打开地图→找最近传送点回血。
+
+        不再依赖已被移除的 go_to_tower。改用 F2 图鉴搜索对应语言的目标名称后点"探测"，
         游戏会把地图定位到固定位置，从该位置寻找传送点回血，结果稳定可复现。
         只点一次"探测"，等待地图打开后再操作，防止二次点击误触地图上的传送图标。
         前提：调用前已回到大世界 (副本内死亡需先退本)。
         """
         # 退本后可能仍在加载黑屏, 给足超时等待真正回到大世界 (原 go_to_tower 用 80s)
         self.ensure_main(time_out=120)
-        # ① F2 图鉴 → 全部怪物 → 搜索"无冠者"
+        # ① F2 图鉴 → 全部怪物 → 搜索对应语言的无冠者
         gray_book = self.openF2Book("gray_book_all_monsters")
         self.click_box(gray_book, after_sleep=1)
         self.click(0.13, 0.14, after_sleep=0.5)        # 搜索图标
-        self.input_text("无冠者")
+        self.input_text(self.get_revive_search_boss_name())
         self.sleep(0.3)
         self.click(0.20, 0.14, after_sleep=0.3)         # 点搜索框确保焦点
         self.send_key('enter', after_sleep=0.5)          # 回车确认搜索, 刷新结果列表
         self.click(0.13, 0.24, after_sleep=0.5)         # 选中第一条结果
-        # ② 点"探测"打开地图并定位到无冠者 (只点一次, 避免地图打开后误触传送点)
+        # ② 点"探测"打开地图并定位到目标 boss (只点一次, 避免地图打开后误触传送点)
         self.click(0.89, 0.92, after_sleep=1)
         # ③ 等待地图打开 (检测地图传送点), 若未打开则补点一次兜底
         if not self.wait_until(lambda: self.find_best_match_in_box(
@@ -558,7 +566,10 @@ class BaseCombatTask(CombatCheck):
                 self._apply_intro_flags(current_char, switch_to, has_intro)
                 if has_intro:
                     current_char.f_break(check_f_on_switch=True)
-
+            if switch_to.wait_switch():
+                self.click()
+                self.sleep(0.1)
+                continue
             if now - last_click > 0.1:
                 self.send_key(switch_to.index + 1)
                 self.sleep(0.001)
@@ -607,7 +618,7 @@ class BaseCombatTask(CombatCheck):
 
     def find_e_forte(self):
         return self.find_one('e_forte', horizontal_variance=0.025, threshold=0.6,
-                             frame_processor=binarize_for_matching)
+                             frame_processor=lambda img: binarize_for_matching(img, 220))
 
     def get_liberation_key(self):
         """获取共鸣解放技能的按键。
@@ -748,6 +759,7 @@ class BaseCombatTask(CombatCheck):
         in_team, current_index, count = self.get_team_state()
         if not in_team:
             return
+        previous_char_identity = self._char_identity(self.chars)
         # self.log_info('load chars')
         self.chars[0] = get_char_by_pos(self, self.get_box_by_name('box_char_1'), 0, safe_get(self.chars, 0))
         self.chars[1] = get_char_by_pos(self, self.get_box_by_name('box_char_2'), 1, safe_get(self.chars, 1))
@@ -761,7 +773,7 @@ class BaseCombatTask(CombatCheck):
         else:
             if len(self.chars) == 3:
                 self.chars = self.chars[:2]
-            logger.info(f'team size changed to 2')
+                logger.info(f'team size changed to 2')
 
         for char in self.chars:
             if char is not None:
@@ -772,18 +784,23 @@ class BaseCombatTask(CombatCheck):
                     char.is_current_char = False
         self.combat_start = time.time()
         if len(self.chars) >= 2:
-            translated_names = []
-            for c in self.chars:
-                if c is not None:
-                    class_name = c.name
-                    official_name = mismatched_names.get(class_name, class_name)
-                    # 单元测试时 self._app 为 None，此时不进行翻译，直接回传原名
-                    translated_name = self.tr(official_name) if self._app is not None else official_name
-                    translated_names.append(translated_name)
-            self.info_set('Chars', ', '.join(translated_names))
-            for c in self.chars:
-                self.log_info(f'loaded chars success {c} {c.confidence}')
+            if self._char_identity(self.chars) != previous_char_identity:
+                translated_names = []
+                for c in self.chars:
+                    if c is not None:
+                        class_name = c.name
+                        official_name = mismatched_names.get(class_name, class_name)
+                        # 单元测试时 self._app 为 None，此时不进行翻译，直接回传原名
+                        translated_name = self.tr(official_name) if self._app is not None else official_name
+                        translated_names.append(translated_name)
+                self.info_set('Chars', ', '.join(translated_names))
+                for c in self.chars:
+                    self.log_info(f'loaded chars success {c} {c.confidence}')
             return True
+
+    @staticmethod
+    def _char_identity(chars):
+        return tuple((char.char_name, char.name) if char is not None else None for char in chars)
 
     @staticmethod
     def should_update(the_char, old_char):

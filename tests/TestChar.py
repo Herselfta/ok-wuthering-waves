@@ -55,6 +55,7 @@ class TestChar(TaskTestCase):
         self.assertEqual(char_dict[Labels.char_chisa]['buff_time'], 12)
         self.assertEqual(char_dict[Labels.char_lucilla]['cls'], Lucilla)
         self.assertEqual(char_dict[Labels.char_lucilla]['char_type'], CharType.SUB_DPS)
+        self.assertTrue(char_dict[Labels.char_lucilla]['target_box_short_combat_check'])
         self.assertEqual(char_dict[Labels.char_lucy]['cls'], Lucy)
         self.assertEqual(char_dict[Labels.char_lucy]['char_type'], CharType.MAIN_DPS)
         self.assertEqual(char_dict[Labels.char_rebecca]['cls'], Rebecca)
@@ -93,6 +94,59 @@ class TestChar(TaskTestCase):
 
         self.assertTrue(task.char_features_warmed_up)
         self.assertEqual(loaded, list(char_names))
+
+    def test_load_chars_reports_only_when_team_changes(self):
+        from importlib import import_module
+
+        base_combat_task_module = import_module('src.task.BaseCombatTask')
+        original_get_char_by_pos = base_combat_task_module.get_char_by_pos
+
+        class CharA(BaseChar):
+            pass
+
+        class CharB(BaseChar):
+            pass
+
+        class CharC(BaseChar):
+            pass
+
+        class CharD(BaseChar):
+            pass
+
+        task = AutoCombatTask.__new__(AutoCombatTask)
+        task.chars = [None, None, None]
+        task.load_hotkey = lambda: None
+        task.in_team = lambda: (True, 0, 3)
+        task.get_box_by_name = lambda name: name
+        task._app = None
+        task.tr = lambda text: text
+        info_sets = []
+        logs = []
+        task.info_set = lambda key, value: info_sets.append((key, value))
+        task.log_info = logs.append
+        team = [(CharA, 'char_a'), (CharB, 'char_b'), (CharC, 'char_c')]
+
+        def get_char_by_pos(task_arg, box, index, old_char):
+            char_cls, char_name = team[index]
+            return char_cls(task_arg, index, char_name=char_name, confidence=0.9)
+
+        base_combat_task_module.get_char_by_pos = get_char_by_pos
+        try:
+            self.assertTrue(task.load_chars())
+            self.assertEqual(info_sets, [('Chars', 'CharA, CharB, CharC')])
+            self.assertEqual(len(logs), 3)
+
+            self.assertTrue(task.load_chars())
+            self.assertEqual(len(info_sets), 1)
+            self.assertEqual(len(logs), 3)
+
+            team[1] = (CharD, 'char_d')
+            self.assertTrue(task.load_chars())
+            self.assertEqual(info_sets[-1], ('Chars', 'CharA, CharD, CharC'))
+            self.assertEqual(len(info_sets), 2)
+            self.assertEqual(len(logs), 6)
+        finally:
+            base_combat_task_module.get_char_by_pos = original_get_char_by_pos
 
     def test_switch_priority_rules(self):
         class Task:
@@ -936,6 +990,68 @@ class TestChar(TaskTestCase):
         self.assertEqual(linnai.resonance_clicks, 2)
         self.assertEqual(linnai.actions, [('sleep', 0.3), ('wait_down', True),
                                           ('sleep', 0.3), ('wait_down', True)])
+
+    def test_linnai_waits_longer_after_aemeath_outro(self):
+        class Task:
+            def __init__(self):
+                self.wait_time_out = None
+
+            def wait_until(self, condition, post_action=None, time_out=0, **kwargs):
+                self.wait_time_out = time_out
+                return condition()
+
+        class TestLinnai(Linnai):
+            def __init__(self, task):
+                super().__init__(task, 0)
+                self.has_intro = True
+                self.check_count = 0
+
+            def check_res(self):
+                self.check_count += 1
+                return self.check_count >= 2
+
+            def check_outro(self):
+                return 'char_aemeath'
+
+            def click_with_interval(self, interval=0.1):
+                pass
+
+        task = Task()
+        linnai = TestLinnai(task)
+        self.assertTrue(linnai.wait_for_accelerate_ready())
+        self.assertEqual(task.wait_time_out, linnai.AEMEATH_INTRO_RES_WAIT)
+
+    def test_linnai_check_res_falls_back_to_long_target_box(self):
+        class Box:
+            def __init__(self, name):
+                self.name = name
+
+        class Match:
+            name = 'has_target'
+
+        class Task:
+            def in_team_and_world(self):
+                return True
+
+            def get_target_names(self):
+                return 'has_target', 'no_target'
+
+            def get_box_by_name(self, name):
+                return Box(name)
+
+            def find_best_match_in_box(self, box, names, threshold=0.6):
+                if box.name == 'box_target_enemy_long':
+                    return Match()
+                return None
+
+            def find_one(self, *args, **kwargs):
+                return None
+
+            def time_elapsed_accounting_for_freeze(self, start, intro_motion_freeze=False):
+                return 999
+
+        linnai = Linnai(Task(), 0)
+        self.assertTrue(linnai.check_res())
 
     def test_intro_does_not_switch_to_phrolova_during_liberation_lock(self):
         class Task:

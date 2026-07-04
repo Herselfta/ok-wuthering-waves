@@ -1,17 +1,17 @@
 import time
 
-from src.char.BaseChar import BaseChar
+from src.char.BaseChar import BaseChar, SwitchPriority
 
 
 class Verina(BaseChar):
-    """Verina 自动战斗(辅助/治疗): 3A -> E -> 大招 -> 声骸 -> (重击) -> 跳跃 -> 2A;
+    """Verina 自动战斗(辅助/治疗): 3A -> 大招 -> E -> 声骸 -> (重击) -> 跳跃 -> 2A;
     协奏满或超时则立即切人。"""
 
-    NORMAL_ATTACK_TIME: float = 1.0
-    JUMP_ATTACK_TIME: float = 0.8
+    NORMAL_ATTACK_TIME: float = 0.6
+    JUMP_ATTACK_TIME: float = 0.5
     HEAVY_ATTACK_TIME: float = 0.7
     RECOVER_TIME: float = 0.8
-    FIELD_TIME: float = 7.0
+    FIELD_TIME: float = 6.5
     HEAVY_ATTACK_INTERVAL: float = 8.0
 
     def __init__(self, *args, **kwargs):
@@ -21,15 +21,15 @@ class Verina(BaseChar):
     def do_perform(self):
         self.perform_combat()
         self.switch_next_char()
-
+        
     def perform_combat(self):
-        """3A -> E -> 大招 -> 声骸 -> (重击) -> 跳跃 -> 2A; 协奏满/超时则提前结束去切人。"""
+        """3A -> 大招 -> E -> 声骸 -> (重击) -> 跳跃 -> 2A; 协奏满/超时则提前结束去切人。"""
         self.start = time.time()
 
         self.continues_normal_attack(self.NORMAL_ATTACK_TIME)
 
-        # 依次放 E -> 大招 -> 声骸; 每步前检查协奏满/超时, 命中则提前结束去切人.
-        for cast_skill in (self.cast_resonance, self.cast_liberation, self.cast_echo):
+        # 依次放 大招 -> E -> 声骸; -> 每步前检查协奏满/超时, 命中则提前结束去切人.
+        for cast_skill in (self.cast_liberation, self.cast_resonance, self.cast_echo):
             if self.should_stop():
                 return
             cast_skill()
@@ -72,3 +72,8 @@ class Verina(BaseChar):
     def field_time_out(self):
         """在场时间是否已超过上限(扣除冻结时间)。"""
         return self.time_elapsed_accounting_for_freeze(self.start) >= self.FIELD_TIME
+
+    def get_switch_priority(self, current_char=None, has_intro=False, target_low_con=False):
+        if has_intro and current_char and current_char.char_name in {'char_hiyuki'}:
+            return SwitchPriority.MUST
+        return super().get_switch_priority(current_char, has_intro, target_low_con)

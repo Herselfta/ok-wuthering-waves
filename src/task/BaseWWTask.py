@@ -371,7 +371,7 @@ class BaseWWTask(BaseTask):
         return "w" if delta_y > 0 else "s"
 
     def find_treasure_icon(self):
-        return self.find_one('treasure_icon', box=self.box_of_screen(0.18, 0.1, 0.82, 0.81), threshold=0.8,
+        return self.find_one('treasure_icon', box=self.box_of_screen(0.03, 0.1, 0.97, 0.81), threshold=0.8,
                              target_height=720)
 
     def click(self, x=-1, y=-1, move_back=False, name=None, interval=-1, move=False, down_time=0.01, after_sleep=0,
@@ -1210,7 +1210,7 @@ def convert_dialog_icon(cv_image):
     return output_image
 
 
-def binarize_for_matching(image):
+def binarize_for_matching(image, threshold=244):
     """
     Converts a colored image to a binary image based on a brightness threshold.
 
@@ -1232,5 +1232,5 @@ def binarize_for_matching(image):
     # Pixels > 239 will be set to 255 (white).
     # Pixels <= 239 will be set to 0 (black).
     # cv2.THRESH_BINARY is the type of thresholding we want.
-    _, binary_image = cv2.threshold(gray_image, 244, 255, cv2.THRESH_BINARY)
+    _, binary_image = cv2.threshold(gray_image, threshold, 255, cv2.THRESH_BINARY)
     return binary_image
