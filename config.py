@@ -214,7 +214,7 @@ try:
     _hook_logger = logging.getLogger("GraphicsHook")
     _original_start_device = sc.StartController.start_device
     
-    def _patched_start_device(self):
+    def _patched_start_device(self, *args, **kwargs):
         try:
             from src.utils import graphics_helper
             # 只有当游戏还没启动时，才执行画质替换
@@ -232,7 +232,7 @@ try:
         except Exception as e:
             _hook_logger.error(f"画质同步拦截失败: {e}")
             
-        return _original_start_device(self)
+        return _original_start_device(self, *args, **kwargs)
 
     # 替换原有的启动方法
     sc.StartController.start_device = _patched_start_device
