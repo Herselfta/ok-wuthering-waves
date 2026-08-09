@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="icon.png" width="200" alt="ok-ww logo"/>
+    <img src="https://raw.githubusercontent.com/ok-oldking/ok-wuthering-waves/master/icons/icon.png" width="200" alt="ok-ww logo"/>
     <br/>
     ok-ww
   </h1> 
@@ -22,7 +22,7 @@
 
 </div>
 
-### English Readme | [中文说明](README.md) | [繁體中文說明](README_zh_TW.md) | [日本語Readme](README_ja.md)
+### English | [简体中文](../zh-CN/index.md) | [繁體中文](../zh-TW/index.md) | [日本語](../ja/index.md)
 
 **Demo & Tutorial:** [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://youtu.be/h6P1KWjdnB4)
 
@@ -75,6 +75,7 @@ If you encounter issues, please check the following steps one by one before aski
 7.  **OpenVINO Error**: If you encounter error `0x000005` on an Intel CPU with an NPU, update to the latest Intel NPU driver.
 8.  **Getting Help**: If the steps above do not solve your problem, please submit a detailed bug report through our community channels.
 9.  **Disable Auto Sprint**: Turn off Auto Sprint in the game settings.
+10. **Equip a Main Echo on Every Character**: Every character in the team must have a main Echo equipped (the Echo Skill icon should appear in the bottom-right corner). If any character does not have one, Auto Combat will not function correctly and may repeatedly lock onto enemies without attacking.
 
 ---
 

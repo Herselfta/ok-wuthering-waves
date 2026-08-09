@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="icon.png" width="200" alt="ok-ww logo"/>
+    <img src="https://raw.githubusercontent.com/ok-oldking/ok-wuthering-waves/master/icons/icon.png" width="200" alt="ok-ww logo"/>
     <br/>
     ok-ww
   </h1> 
@@ -22,7 +22,7 @@
 
 </div>
 
-### [English Readme](README_en.md) | [中文说明](README.md) | [繁體中文說明](README_zh_TW.md) | 日本語Readme
+### [English](../en/index.md) | [简体中文](../zh-CN/index.md) | [繁體中文](../zh-TW/index.md) | 日本語
 
 **デモ＆チュートリアル:** [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://youtu.be/h6P1KWjdnB4)
 
@@ -75,6 +75,7 @@
 7.  **OpenVINO エラー**: NPU 搭載の Intel CPU で `0x000005` エラーが発生した場合は、Intel の最新 NPU ドライバーに更新してください。
 8.  **サポートを受ける**: 上記の手順で問題が解決しない場合は、コミュニティチャンネルを通じて詳細なバグレポートを提出してください。
 9.  **自動ダッシュを無効にする**: ゲーム設定で自動ダッシュを無効にしてください。
+10. **すべてのキャラクターにメイン音骸を装備する**: チーム内のすべてのキャラクターにメイン音骸を装備してください（画面右下に音骸スキルのアイコンが表示される状態）。1人でも未装備の場合、自動戦闘は正常に動作せず、敵を繰り返しロックオンするだけで攻撃しないことがあります。
 
 ---
 

@@ -1,6 +1,6 @@
 <div align="center">
   <h1 align="center">
-    <img src="icon.png" width="200" alt="ok-ww logo"/>
+    <img src="https://raw.githubusercontent.com/ok-oldking/ok-wuthering-waves/master/icons/icon.png" width="200" alt="ok-ww logo"/>
     <br/>
     ok-ww
   </h1> 
@@ -22,7 +22,7 @@
 
 </div>
 
-### [English Readme](README_en.md) | [中文说明](README.md) | 繁體中文說明 | [日本語Readme](README_ja.md)
+### [English](../en/index.md) | [简体中文](../zh-CN/index.md) | 繁體中文 | [日本語](../ja/index.md)
 
 **示範與教學:** [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://youtu.be/h6P1KWjdnB4)
 
@@ -75,6 +75,7 @@
 7.  **OpenVINO 錯誤**：如果遇到 `0x000005` 錯誤，並且使用的是配備 NPU 的 Intel CPU，請更新至 Intel 最新的 NPU 驅動程式。
 8.  **尋求協助**：如果以上步驟都無法解決您的問題，請透過社群管道提交詳細的錯誤回報。
 9.  **關閉自動奔跑**：在遊戲設定裡關閉自動奔跑。
+10. **為所有角色裝備主聲骸**：隊伍中的每個角色都必須裝備主聲骸（畫面右下角應顯示聲骸技能圖示）。任何一個角色未裝備主聲骸時，自動戰鬥將無法正常運作，並可能反覆鎖定敵人而不攻擊。
 
 ---
 

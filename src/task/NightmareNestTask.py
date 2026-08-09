@@ -2,7 +2,6 @@ import re
 import cv2
 from dataclasses import dataclass
 
-from qfluentwidgets import FluentIcon
 from ok import Logger
 from src.task.BaseCombatTask import BaseCombatTask, CharRevivedException
 from src.task.WWOneTimeTask import WWOneTimeTask
@@ -25,12 +24,9 @@ class NightmareNestTask(WWOneTimeTask, BaseCombatTask):
         self.default_config = {'_enabled': True}
         self.trigger_interval = 0.1
         self.target_enemy_time_out = 10
-        self.name = "Nightmare Nest Task"
+        self.name = "🌙 Nightmare Nest Task"
         self.description = "Auto Farm all Nightmare Nest"
         self.support_schedule_task = True
-        self.group_name = "Daily"
-        self.group_icon = FluentIcon.HOME
-        self.icon = FluentIcon.CALORIES
         self.count_re = re.compile(r"(\d{1,2})/(\d{1,2})")
         self.queues = []
         self._capture_success = False
@@ -126,9 +122,7 @@ class NightmareNestTask(WWOneTimeTask, BaseCombatTask):
             wait_combat_time = 1
         # 与刷全部一致：退本后再结束 combat_nest，避免还在巢穴内回 Daily/开书
         if is_team:
-            self.send_key('esc', after_sleep=1)
-            self.click(0.652, 0.628, after_sleep=2)
-            self.wait_in_team_and_world(time_out=120)
+            self.esc_world_confirm()
         self.sleep(1)
 
     def _should_continue_combat_after_pickup(self):

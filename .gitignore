@@ -1,5 +1,6 @@
 .venv
 onnxocr/
+ok_tasks/
 updates/
 working/
 update/
@@ -39,6 +40,7 @@ tests/logs/
 i18n/en_US/
 logs/
 build/
+site/
 develop-eggs/
 dist/
 downloads/
@@ -75,3 +77,4 @@ assets/result.json
 # Graphics Optimization Configs (Exclude private DBs, Keep INI templates)
 config_presets/**/*.db
 config_presets/**/*-journal
+src/gui/CharacterCodeTab.py
