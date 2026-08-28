@@ -16,12 +16,15 @@ from src.char.Chixia import Chixia
 from src.char.Aemeath import Aemeath
 from src.char.Augusta import Augusta
 from src.char.Baizhi import Baizhi
+from src.char.Chisa import Chisa
 from src.Labels import Labels
 from src.char.CustomCharLoader import (
     clear_team_char_cache, create_custom_team, get_custom_team_folder, read_team_char_code,
 )
 from src.char.Mortefi import Mortefi
+from src.char.Suisui import Suisui
 from src.char.Verina import Verina
+from src.char.YangYangSp import YangYangSp
 from src.gui.CharacterCodeTab import (
     CharacterCodeTab, ExportTeamDialog, ImportTeamDialog, TeamSelectionDialog,
     WorkshopDialog, fetch_workshop_codes, workshop_team_url,
@@ -94,6 +97,12 @@ class TestCharacterCodeTab(unittest.TestCase):
             "https://okwwcharcode.ok-script.com/teams/Aemeath_Augusta_Baizhi.json",
         )
 
+    def test_workshop_url_sanitizes_character_name_punctuation(self):
+        self.assertEqual(
+            workshop_team_url((YangYangSp, Chisa, Suisui)),
+            "https://okwwcharcode.ok-script.com/teams/Chisa_Suisui_Yangyang_Xuanling.json",
+        )
+
     def test_workshop_codes_are_sorted_by_timestamp_descending(self):
         payload = {
             "members": ["Aemeath", "Augusta", "Baizhi"],
@@ -110,9 +119,16 @@ class TestCharacterCodeTab(unittest.TestCase):
             def read(self, _size):
                 return json.dumps(payload).encode("utf-8")
 
-        with patch("src.gui.CharacterCodeTab.urlopen", return_value=Response()):
+        with (
+            patch("src.gui.CharacterCodeTab.urlopen", return_value=Response()),
+            patch("src.gui.CharacterCodeTab.logger.info") as log_info,
+        ):
             codes = fetch_workshop_codes((Aemeath, Augusta, Baizhi))
         self.assertEqual([code["name"] for code in codes], ["newer", "older"])
+        log_info.assert_called_once_with(
+            "char code workshop request: "
+            "https://okwwcharcode.ok-script.com/teams/Aemeath_Augusta_Baizhi.json"
+        )
 
     def test_workshop_404_is_an_empty_list(self):
         error = HTTPError("https://example.invalid", 404, "Not Found", {}, None)
