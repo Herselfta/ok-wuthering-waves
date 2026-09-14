@@ -181,6 +181,12 @@
             "height": 1080
         },
         {
+            "id": 41,
+            "file_name": "images/47.png",
+            "width": 2560,
+            "height": 1440
+        },
+        {
             "id": 42,
             "file_name": "images/31.png",
             "width": 3840,
@@ -3742,6 +3748,19 @@
             "iscrowd": 0
         },
         {
+            "id": 181,
+            "image_id": 41,
+            "category_id": 281,
+            "bbox": [
+                2355,
+                304,
+                62,
+                52
+            ],
+            "area": 3224,
+            "iscrowd": 0
+        },
+        {
             "id": 182,
             "image_id": 92,
             "category_id": 46,
@@ -6622,6 +6641,11 @@
         {
             "id": 280,
             "name": "char_yangyang",
+            "supercategory": ""
+        },
+        {
+            "id": 281,
+            "name": "char_lingyang",
             "supercategory": ""
         }
     ]
