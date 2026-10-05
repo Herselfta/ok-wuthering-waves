@@ -4,6 +4,7 @@ import time
 import os
 import zlib
 import threading
+import unicodedata
 import requests
 import json
 import traceback
@@ -15,9 +16,17 @@ from src.scene.WWScene import WWScene
 from src.task.BaseWWTask import BaseWWTask
 
 logger = Logger.get_logger(__name__)
-
-number_pattern = re.compile(r"^[\d.%％ ]+$")
 property_pattern = re.compile(r"[\u4e00-\u9fff]{2,}")
+
+
+def is_echo_ui_noise(text):
+    """\u5224\u522b\u5e95\u90e8\u300c\u5f3a\u5316\u81f3+25\u5e76\u6fc0\u6d3b\u8f85\u97f3\u5c5e\u6027\u300d\u6309\u94ae\u7684 OCR \u788e\u7247.
+
+    \u8be5\u6309\u94ae\u4e0e\u526f\u8bcd\u6761\u540c\u5728\u4e00\u4e2a OCR \u533a\u5185, \u540d\u5b57\u82e5\u6df7\u5165\u5c5e\u6027/\u6570\u503c\u5217\u8868, '\u5f3a\u5316\u81f3'
+    \u4f1a\u88ab\u5f53\u6210\u7b2c 5 \u6761\u526f\u8bcd\u6761, \u5b54\u6570\u7b97\u6210 0, \u597d\u58f0\u9ab8\u88ab\u8bef\u4e22 (\u771f\u673a 2026-09-23
+    15:04:40 \u73b0\u573a: OCR \u628a\u5b83\u622a\u65ad\u6210 '\u5f3a\u5316\u81f3+25\u5e76\u6fc0\u6d3b\u8f85', \u65e7\u5b88\u536b\u56e0\u7f3a\u5b57\u6f0f\u7f51).
+    """
+    return ('\u5f3a\u5316' in text) or ('\u8f85\u97f3' in text) or ('\u6fc0\u6d3b' in text)
 
 
 def safe_sync_to_echo_sight(echo_stats_pairs, status="completed", cost_class=4, main_stat_key="crit_rate", nickname=None, echo_id=None):
@@ -38,8 +47,7 @@ def safe_sync_to_echo_sight(echo_stats_pairs, status="completed", cost_class=4, 
             
             substats = []
             for i, (prop_name_raw, prop_val) in enumerate(echo_stats_pairs):
-                cleaned_val = prop_val.replace('%', '').replace('％', '').strip()
-                val_float = float(cleaned_val) if cleaned_val.replace('.', '', 1).isdigit() else 0.0
+                val_float = parse_number(prop_val)
                 has_pct = '%' in prop_val or '％' in prop_val
                 
                 cleaned_name = prop_name_raw.replace(" ", "")
@@ -234,22 +242,39 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                 if not have_add_mat:
                     raise Exception('强化设置需要开启阶段放入!')
 
-                if not self.wait_click_ocr(0.1, 0.88, 0.29, 0.96, match=['强化并调谐'],
-                                           settle_time=0.1,
-                                           after_sleep=1.5):
-                    if self.ocr(0.17, 0.88, 0.29, 0.96, match=['强化']):
-                        raise Exception('强化设置需要开启同步调谐!')
-                    else:
-                        raise Exception('找不到 强化并调谐!')
-                while handle := self.wait_ocr(0.24, 0.18, 0.75, 0.98,
-                                              match=[re.compile('不再提示'), '调谐成功', re.compile('点击任')],
-                                              time_out=2):
-                    if handle[0].name in ['本次登录不再提示', '本次登入不再提示']:
-                        self.click_skip_dialog_confirm()
-                    elif handle[0].name in ['点击任意位置返回', '调谐成功']:
-                        self.click(handle, after_sleep=1)
-                    else:
+                # 强化并调谐的点击偶发被游戏吞掉(弹窗停在已放入材料态), 若不校验
+                # 调谐是否真正发生, 会静默跌落回 find_add_mat 并误报"需要开启阶段放入".
+                # 因此把"调谐成功浮层出现"作为点击生效的判据, 未出现则重试点击.
+                tune_overlay = [re.compile('不再提示'), '调谐成功', re.compile('点击任')]
+                tune_confirmed = False
+                for tune_attempt in range(3):
+                    if not self.wait_click_ocr(0.1, 0.88, 0.29, 0.96, match=['强化并调谐'],
+                                               settle_time=0.1,
+                                               after_sleep=1.5):
+                        if self.ocr(0.17, 0.88, 0.29, 0.96, match=['强化']):
+                            raise Exception('强化设置需要开启同步调谐!')
+                        else:
+                            raise Exception('找不到 强化并调谐!')
+                    handle = self.wait_ocr(0.24, 0.18, 0.75, 0.98, match=tune_overlay, time_out=2)
+                    if not handle:
+                        # 点击可能被吞: 缓一拍宽限确认一次, 仍未出现调谐动画才重试点击
                         self.sleep(0.5)
+                        handle = self.wait_ocr(0.24, 0.18, 0.75, 0.98, match=tune_overlay, time_out=1)
+                    if not handle:
+                        self.log_info(f'强化并调谐 点击后未检测到调谐动画(第{tune_attempt + 1}次), 疑似点击被吞, 重试')
+                        continue
+                    while handle:
+                        if handle[0].name in ['本次登录不再提示', '本次登入不再提示']:
+                            self.click_skip_dialog_confirm()
+                        elif handle[0].name in ['点击任意位置返回', '调谐成功']:
+                            self.click(handle, after_sleep=1)
+                        else:
+                            self.sleep(0.5)
+                        handle = self.wait_ocr(0.24, 0.18, 0.75, 0.98, match=tune_overlay, time_out=2)
+                    tune_confirmed = True
+                    break
+                if not tune_confirmed:
+                    raise Exception('强化并调谐 多次点击未生效(疑似点击被吞), 请勿遮挡游戏窗口后重试!')
                 self.sleep(0.1)
                 texts = self.ocr(285/2560, 450/1440, 880/2560, 740/1440)
                 self.log_info(f'ocr values: {texts}')
@@ -258,7 +283,12 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
                     match = property_pattern.search(p.name)
                     if match:
                         p.name = match.group()
-                values = self.find_boxes(texts, match=number_pattern)
+                # 放宽值筛选: 只要求含数字且不含中文, 容忍 '7.5%-' / '.9.0%' 这类
+                # 720p 小字号 OCR 毛刺; 旧的number全串匹配会把 '7.5%-' 剔除,
+                # 导致 词条-数值 按最近y错位配对, 好声骸被误丢
+                values = [v for v in texts
+                          if re.search(r'\d', v.name) and not re.search(r'[一-鿿]', v.name)]
+                properties = [p for p in properties if not is_echo_ui_noise(p.name)]
                 self.info_set('属性', properties)
                 self.info_set('值', values)
 
@@ -292,16 +322,33 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
 
         paired_stats = []
         unmatched_values = values.copy()
+        # 词条-数值配对护栏: 优先用与词条同一行(y 差 <= ROW_TOLERANCE)的数值.
+        # 720p 下 OCR 偶发把按钮碎片/远处数值识别进 values, 全局最近贪吃会把
+        # 远处数值错配到当前词条, 导致好声骸被误判丢弃 (真机 2026-09-23
+        # 15:04:40 现场: '.40%' 与 '强化至+25并激活辅' 打断配对链).
+        ROW_TOLERANCE = 12
+        paired_rows = []  # (prop_box, value_box or None)
         for prop in properties:
-            matched_val_text = "0"
+            closest_val = None
             if unmatched_values:
-                closest_val = min(unmatched_values, key=lambda v: abs(prop.y - v.y))
-                matched_val_text = closest_val.name
+                same_row = [v for v in unmatched_values if abs(v.y - prop.y) <= ROW_TOLERANCE]
+                candidates = same_row if same_row else unmatched_values
+                closest_val = min(candidates, key=lambda v: abs(prop.y - v.y))
                 unmatched_values.remove(closest_val)
-            paired_stats.append((prop.name, matched_val_text))
+            paired_rows.append((prop, closest_val))
+
+        # 整版读数即最终读数. 曾经 here 的"单行放大二次校正"于 2026-09-25
+        # 整体撤销: 复核行带自身会触发 PP-OCRv5 det 的尺度拆框(17.4%/9.3%
+        # 两次真机误丢好声骸皆源于此), 它防住的原生偶发误读反而更少; 原生
+        # 整版读数在 9 帧真机离线重放中压暗/混白/模糊全部读对.
+        paired_stats = []
+        for prop, val_box in paired_rows:
+            if val_box is None:
+                self.log_info(f'词条 {prop.name} 整版OCR未检出数值, 记0')
+            paired_stats.append((prop.name, val_box.name if val_box is not None else '0'))
+        self.last_paired_stats = paired_stats
 
         total_count = len(paired_stats)
-        self.last_paired_stats = paired_stats
 
         crit_rate_val = 0
         crit_dmg_val = 0
@@ -455,26 +502,43 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
         self.screenshot(name=name, frame=echo)
 
     def lock_and_esc(self):
+        """按 c 上锁, 以系统提示条文本判向: 锁定成功=收工, 解锁成功=再按.
+
+        弃用锁扣图标像素判据: 720p 下图标仅 15x17 px, 开/闭锁亮像素差异
+        不足阈值, 真机从未判定成功 (19:46:44). 提示条文案由游戏自身广播
+        状态, 与图标美术版本/分辨率/坐标无关; 每次有效按键必弹一条, 漏读
+        只会多按一次 (奇偶自纠, 只认「锁定」停), 无提示视为吞击再按.
+        真机 toast 文案 (2026-09-23 20:34 现场): 上锁弹「物品锁定成功」,
+        解锁弹「物品解锁成功」——是「锁定」不是「上锁」, 别想当然.
+        提示条水平居中, y 中心约 0.2 (真机 720p 实测条带 x 523-755,
+        y 126-162), 区域取宽余量以兼容不同文案长度.
+        """
         self.info_incr('成功声骸数量')
         start = time.time()
         success = False
-        lock_status_box = get_bounding_box([
-            self.get_box_by_name('echo_locked'),
-            self.get_box_by_name('echo_not_locked'),
-        ]).scale(1.05)
-        while time.time() - start < 5:
-            drop_status = self.find_best_match_in_box(lock_status_box,
-                                                      ['echo_locked', 'echo_not_locked'], threshold=0.7)
-            if not drop_status:
-                raise Exception('无法找到声骸上锁状态!')
-            if drop_status.name == 'echo_not_locked':
-                self.send_key('c', after_sleep=1)
-            else:
-                self.log_info('成功上锁!')
-                success = True
+        press_count = 0
+        last_texts = ''
+        while time.time() - start < 12 and press_count < 6:
+            self.send_key('c', after_sleep=0.5)
+            press_count += 1
+            for _ in range(15):
+                boxes = self.ocr(0.35, 0.12, 0.65, 0.28) or []
+                texts = ' '.join(t.name for t in boxes if t.name)
+                if texts:
+                    last_texts = texts
+                if '解锁' in texts:
+                    self.log_info(f'声骸原本已锁定, 已解锁, 再按 c 上锁 (提示: {texts})')
+                    break
+                if '锁定' in texts or '上锁' in texts:
+                    self.log_info(f'成功上锁! (提示: {texts})')
+                    success = True
+                    break
+                self.next_frame()
+            if success:
                 break
         if not success:
-            raise Exception('上锁失败!')
+            self.screenshot('lock_failed')
+            raise Exception(f'上锁失败! 已按 c {press_count} 次, 最后提示: [{last_texts}], 失败截图已保存')
         self.screenshot_echo(f'success/{self.info_get("成功声骸数量")}')
         self.log_info('成功并上锁')
         if self.config.get('Pause after Success'):
@@ -485,9 +549,18 @@ class EnhanceEchoTask(BaseWWTask, FindFeature):
 
 
 def parse_number(text):
+    """从 OCR 文本提取数值, 容忍 720p 小字号的常见误识.
+
+    例: '.9.0%' -> 9.0, '7.5%-' -> 7.5, 'l5.0%' -> 15.0, 无数字时返回 0.0.
+    """
+    t = unicodedata.normalize('NFKC', text).replace(' ', '')
+    t = re.sub(r'[lI|]', '1', t)
+    m = re.search(r'\d+(?:\.\d+)?', t)
+    if not m:
+        return 0.0
     try:
-        return float(text.replace('％', '%').split('%')[0])
-    except (ValueError, IndexError):
+        return float(m.group())
+    except ValueError:
         return 0.0
 
 
