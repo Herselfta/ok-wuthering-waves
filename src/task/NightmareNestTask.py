@@ -122,7 +122,7 @@ class NightmareNestTask(WWOneTimeTask, BaseCombatTask):
                     captured_early = True
             if not captured_early:
                 self.sleep(3)
-                if need_find and not self.walk_find_echo(time_out=5, backward_time=2.5):
+                if need_find and not self.walk_find_echo(time_out=3, backward_time=7):
                     dropped = self.yolo_find_echo(turn=True, use_color=False, time_out=30)[0]
                     logger.info(f'farm echo yolo find {dropped}')
                     if not dropped and not is_team:
@@ -137,7 +137,7 @@ class NightmareNestTask(WWOneTimeTask, BaseCombatTask):
                                             raise_if_not_found=False) and self._travel_to_nest_or_skip(nest):
                             self.sleep(2)
                             self.run_until(lambda: False, 'w', time_out=2, running=True)
-                            if not self.walk_find_echo(time_out=5, backward_time=2.5):
+                            if not self.walk_find_echo(time_out=3, backward_time=7):
                                 dropped = self.yolo_find_echo(turn=True, use_color=False, time_out=30)[0]
                                 logger.info(f'farm echo yolo find after re-teleport {dropped}')
                             else:
