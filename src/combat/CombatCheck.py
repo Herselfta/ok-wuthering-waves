@@ -18,7 +18,7 @@ class CombatCheck(BaseWWTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._in_combat = False
-        self.skip_combat_check = False
+        self._skip_combat_check_count = 0
         self.boss_lv_template = None
         self.boss_lv_mask = None
         self._in_liberation = False  # return True
@@ -41,6 +41,28 @@ class CombatCheck(BaseWWTask):
         }
         self.esc_count = 0
         self.can_break = False
+
+    @property
+    def skip_combat_check(self):
+        """是否跳过战斗状态检查 (计数器驱动)。
+
+        不能是普通布尔: 调用方可能在异常路径上退出(停止任务会抛
+        TaskDisabledException), 一旦漏掉恢复, 标志永久卡在 True, check_combat
+        全部失效, 表现就是停止任务后逻辑仍在运行。计数器还能正确处理嵌套,
+        内层退出不会清掉外层仍需要的跳过状态。
+        """
+        return self._skip_combat_check_count > 0
+
+    @skip_combat_check.setter
+    def skip_combat_check(self, value):
+        # 兼容既有调用方的直接赋值写法。
+        self._skip_combat_check_count = 1 if value else 0
+
+    def push_skip_combat_check(self):
+        self._skip_combat_check_count += 1
+
+    def pop_skip_combat_check(self):
+        self._skip_combat_check_count = max(0, self._skip_combat_check_count - 1)
 
     @property
     def in_liberation(self):

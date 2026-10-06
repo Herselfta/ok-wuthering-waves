@@ -356,10 +356,20 @@ class BaseChar:
                                    target_low_con=target_low_con)
 
     def sleep(self, sec, check_combat=True):
-        if not check_combat:
-            self.task.skip_combat_check = True
-        self.task.sleep(sec)
-        self.task.skip_combat_check = False
+        if check_combat:
+            self.task.sleep(sec)
+            return
+        # Skip combat check for this sleep only, and always restore it. task.sleep()
+        # can raise (task stop throws TaskDisabledException, liberation raises
+        # NotInCombatException); without the finally the flag would stay True and
+        # disable every later combat check, so the task keeps running after stop.
+        # The counter also survives nested sleeps, where an inner sleep would
+        # otherwise clear the flag the outer sleep still needs.
+        self.task.push_skip_combat_check()
+        try:
+            self.task.sleep(sec)
+        finally:
+            self.task.pop_skip_combat_check()
 
     def alert_skill_failed(self):
         self.task.log_error(f'Click skill failed, check if the keybinding is correct in ok-ww settings!',

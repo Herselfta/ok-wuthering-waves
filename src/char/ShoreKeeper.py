@@ -31,7 +31,7 @@ class ShoreKeeper(BaseChar):
 
     def do_perform(self):
         if self.has_intro:
-            self.task.skip_combat_check = True
+            self.task.push_skip_combat_check()
             try:
                 self.logger.debug('ShoreKeeper wait intro animation')
                 time.sleep(0.1)
@@ -40,7 +40,7 @@ class ShoreKeeper(BaseChar):
                 else:
                     self.continues_normal_attack(1.2)
             finally:
-                self.task.skip_combat_check = False
+                self.task.pop_skip_combat_check()
         self.click_echo(time_out=0)
         self.click_liberation()
         if not self.click_resonance():
