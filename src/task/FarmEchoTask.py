@@ -201,7 +201,7 @@ class FarmEchoTask(WWOneTimeTask, BaseCombatTask):
                 self.incr_drop(dropped)
                 if not self.bypass_end_wait:
                     if dropped and not self._has_treasure:
-                        self.wait_until(self.in_combat, raise_if_not_found=False, time_out=5)
+                        self.wait_until(self.in_combat, raise_if_not_found=False, time_out=0.1)
                     else:
                         self.wait_until(self.in_combat, raise_if_not_found=False, time_out=1)
             except TaskDisabledException:
