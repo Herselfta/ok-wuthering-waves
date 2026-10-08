@@ -905,18 +905,24 @@ class BaseChar:
         self.check_combat()
         self.task.click()
 
-    def heavy_attack(self, duration=0.6):
+    def heavy_attack(self, duration=0.6, check_combat=True):
         """执行一次重攻击。
 
         Args:
             duration (float, optional): 重攻击按键按下的持续时间。默认为 0.6。
+            check_combat (bool, optional): 长按期间是否做脱战检查。长按途中
+                战斗结束时脱战异常会从 sleep 抛出, 必须 finally 松键, 否则
+                左键卡在按下状态, 角色脱战后仍持续蓄力攻击导致位置漂移。
         """
-        self.check_combat()
+        if check_combat:
+            self.check_combat()
         self.logger.debug('heavy attack start')
         self.task.mouse_down()
-        self.sleep(duration)
-        self.task.mouse_up()
-        self.sleep(0.01)
+        try:
+            self.sleep(duration, check_combat=check_combat)
+        finally:
+            self.task.mouse_up()
+        self.sleep(0.01, check_combat=check_combat)
         self.logger.debug('heavy attack end')
 
     def current_resonance(self):

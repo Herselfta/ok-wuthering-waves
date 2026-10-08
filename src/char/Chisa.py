@@ -90,5 +90,11 @@ class Chisa(BaseChar):
         self.task.send_key(self.get_resonance_key(), down_time=1.2)
         if self.is_forte_full():
             return False
-        self.heavy_attack(3.5)
+        # 长按期间跳过脱战检查, 让固定3.5秒走完(敌死脱战会从sleep抛异常截断长按),
+        # pop后交回外层循环的check_combat
+        self.task.push_skip_combat_check()
+        try:
+            self.heavy_attack(3.5)
+        finally:
+            self.task.pop_skip_combat_check()
         return True
