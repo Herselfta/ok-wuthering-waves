@@ -250,7 +250,7 @@ config = {
     'config_folder': 'configs',
     'blur_area': blur_area,
     'gui_icon': 'icons/icon.png',
-    'global_configs': [key_config_option, key_config_option, char_config_option, monthly_card_config_option, graphics_config_option],
+    'global_configs': [basic_config_option, key_config_option, char_config_option, monthly_card_config_option, graphics_config_option],
     'custom_tabs': [
         ["src.gui.CharacterCodeTab", "CharacterCodeTab"],
         ["src.gui.MultiAccountConfigTab", "MultiAccountConfigTab"],
