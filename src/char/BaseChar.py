@@ -715,8 +715,8 @@ class BaseChar:
         first; the named priority bands are spaced by 100 so callers can return
         values such as ``SwitchPriority.HIGH + 1``.
         """
-        if self.healer_full_con_switch_locked():
-            return SwitchPriority.NO
+        # The selector applies the shared healer lockout separately so its
+        # deadlock fallback can still respect character-specific NO priorities.
         return SwitchPriority.NORMAL
 
     def healer_full_con_switch_locked(self):
@@ -869,6 +869,21 @@ class BaseChar:
             self.task.click()
             self.sleep(interval)
         self.sleep(after_sleep)
+
+    def continues_click_until(self, condition, time_out, interval=0.1):
+        """Left-click until condition() is truthy or time_out seconds elapse.
+
+        Checks the condition before clicking and refreshes the frame on each
+        retry. Returns True when the condition is met, or False on timeout.
+        A non-positive timeout checks the condition once without clicking.
+        """
+        if time_out <= 0:
+            return bool(condition())
+        return bool(self.task.wait_until(
+            condition, time_out=time_out, settle_time=0,
+            pre_action=self.check_combat,
+            post_action=lambda: self.click(interval=interval),
+        ))
 
     def continues_click(self, key, duration, interval=0.1):
         """持续发送指定按键一段时间。
