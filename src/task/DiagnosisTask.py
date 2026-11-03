@@ -15,8 +15,8 @@ class DiagnosisTask(WWOneTimeTask, BaseCombatTask):
 
     def run(self):
         super().run()
-        if not self.in_team():
-            self.log_error('must be in game world and in teams, please check you game resolution is 16:9', notify=True)
+        if not self.in_team()[0]:
+            self.log_error(self.tr('must be in game world and in teams, please check you game resolution is 16:9'), notify=True)
             return
         self.load_hotkey(force=True)
 

@@ -12,6 +12,8 @@ class FakeEnhanceTask:
     cv2.matchTemplate (#1238, #1291).
     """
 
+    tr = staticmethod(str)
+
     def __init__(self, boxes, match_name):
         self.boxes = boxes
         self.match_name = match_name
@@ -91,19 +93,6 @@ class FakeSelectTask:
         return self.zero_level_results.pop(0)
 
 
-def make_lock_task(ocr_results):
-    """Scripts the toast OCR: each lock_and_esc poll pops the next page."""
-    task = FakeEnhanceTask({}, match_name='')
-    scripted = [list(page) for page in ocr_results]
-
-    def ocr(*args, **kwargs):
-        page = scripted.pop(0) if scripted else []
-        return [Box(0, 0, 1, 1, name=n) for n in page]
-
-    task.ocr = ocr
-    return task
-
-
 class TestEnhanceEchoStatusBox(unittest.TestCase):
     # Sibling templates deliberately differ in size, with the sibling BIGGER
     # than the anchor box: the geometry that crashed the lock pair in
@@ -132,44 +121,22 @@ class TestEnhanceEchoStatusBox(unittest.TestCase):
         self.assertCovers(search, dropped)
         self.assertCovers(search, not_dropped)
 
-    def test_lock_presses_once_when_toast_says_locked(self):
-        # 真机 2026-09-23 20:34 现场文案: 上锁弹「物品锁定成功」;
-        # 「物品上锁成功」不是真机文案, 但保留兼容.
-        for wording in ('物品锁定成功', '物品上锁成功'):
-            task = make_lock_task([[wording]])
-
-            EnhanceEchoTask.lock_and_esc(task)
-
-            self.assertEqual(task.key_presses, ['c'])
-            self.assertEqual(task.counters.get('成功声骸数量'), 1)
-
-    def test_lock_presses_again_after_unlock_toast(self):
-        # 声骸原本已锁定: 第 1 按弹「解锁成功」, 第 2 按弹「锁定成功」.
-        task = make_lock_task([['物品解锁成功'], ['物品锁定成功']])
+    def test_lock_search_box_covers_both_lock_templates(self):
+        # 合并上游 4d6dc86 后, lock_and_esc 以上游模板匹配判定锁定状态;
+        # 搜索框必须同时盖住两个兄弟模板, 否则 cv2.matchTemplate 会炸 (#1238, #1291).
+        locked = Box(631, 152, 23, 26, name='echo_locked')
+        not_locked = Box(631, 151, 24, 29, name='echo_not_locked')
+        task = FakeEnhanceTask({'echo_locked': locked,
+                                'echo_not_locked': not_locked},
+                               match_name='echo_locked')
 
         EnhanceEchoTask.lock_and_esc(task)
 
-        self.assertEqual(task.key_presses, ['c', 'c'])
-        self.assertEqual(task.counters.get('成功声骸数量'), 1)
-
-    def test_lock_retries_when_toast_missing(self):
-        # 游戏 UI 吞首击 (怪癖 #1): 第 1 按整个轮询窗 (15 次) 都无提示,
-        # 第 2 按生效.
-        task = make_lock_task([[]] * 15 + [['物品锁定成功']])
-
-        EnhanceEchoTask.lock_and_esc(task)
-
-        self.assertEqual(task.key_presses, ['c', 'c'])
-        self.assertEqual(task.counters.get('成功声骸数量'), 1)
-
-    def test_lock_failure_raises_after_six_presses(self):
-        # 提示条始终无「上锁」→ 6 挡后抛错, 消息带上最后读到的提示文本.
-        task = make_lock_task([['物品解锁成功']] + [[]] * 200)
-
-        with self.assertRaisesRegex(Exception, '上锁失败'):
-            EnhanceEchoTask.lock_and_esc(task)
-
-        self.assertEqual(len(task.key_presses), 6)
+        [(search, names, threshold)] = task.best_match_calls
+        self.assertEqual(names, ['echo_locked', 'echo_not_locked'])
+        self.assertEqual(threshold, 0.7)
+        self.assertCovers(search, locked)
+        self.assertCovers(search, not_locked)
 
     def test_ui_noise_filtered_from_properties(self):
         # 真机 2026-09-23 15:04:40 现场: OCR 把按钮截断成 '强化至+25并激活辅',
