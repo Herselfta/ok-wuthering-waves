@@ -1,2 +1,1 @@
-﻿conda activate ok-ww-py312
-python main_debug.py
+﻿& "$PSScriptRoot\.venv\Scripts\python.exe" "$PSScriptRoot\main_debug.py"
