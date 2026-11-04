@@ -1,0 +1,30 @@
+#!/bin/sh
+# Auto-sync venv deps when a merge changes requirements.txt.
+# Fires after `git pull` / `git merge` that performs a real merge (not fast-forward).
+# Machine-local convenience hook: .git/hooks is not versioned by git.
+# Reinstall on a new machine; the incident that motivated this hook is in AGENTS.md.
+
+if [ -z "$(git diff --name-only ORIG_HEAD HEAD -- requirements.txt 2>/dev/null)" ]; then
+    exit 0
+fi
+
+if [ ! -f .venv/Scripts/python.exe ]; then
+    echo "[post-merge] requirements.txt changed but no .venv found in repo root - sync manually:"
+    echo "    uv pip install --python .venv/Scripts/python.exe -r requirements.txt"
+    exit 0
+fi
+
+UV=$(command -v uv 2>/dev/null)
+if [ -z "$UV" ]; then
+    for cand in "$HOME/.local/bin/uv.exe" "$HOME/.cargo/bin/uv.exe"; do
+        if [ -f "$cand" ]; then UV="$cand"; break; fi
+    done
+fi
+if [ -z "$UV" ]; then
+    echo "[post-merge] requirements.txt changed but uv not found - sync manually:"
+    echo "    uv pip install --python .venv/Scripts/python.exe -r requirements.txt"
+    exit 0
+fi
+
+echo "[post-merge] requirements.txt changed in this merge - syncing venv deps..."
+exec "$UV" pip install --python .venv/Scripts/python.exe -r requirements.txt
