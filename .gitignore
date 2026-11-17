@@ -81,3 +81,4 @@ assets/result.json
 config_presets/**/*.db
 config_presets/**/*-journal
 src/gui/CharacterCodeTab.py
+
