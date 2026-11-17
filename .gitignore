@@ -1,4 +1,5 @@
 .venv
+uv.lock
 onnxocr/
 ok_tasks/
 ok_import/
