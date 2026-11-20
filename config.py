@@ -313,6 +313,15 @@ config = {
         'check_night_light': True,
         'force_no_night_light': False,
     },
+    'browser': {
+        'url': 'https://mc.kurogames.com/cloud/#/',
+        'resolution': (1920, 1080),
+        'channels': ['msedge', 'chrome', 'chromium'],
+        # Keep SDR video in the compositor; direct video overlays clip WGC colors on HDR displays.
+        'args': ['--webrtc-ip-handling-policy=default', '--force-color-profile=srgb',
+                 '--disable-direct-composition'],
+        'nick': '云游戏(需要Win11并安装Chrome或Edge)',
+    },
     'window_size': {
         'width': 1200,
         'height': 800,
@@ -357,6 +366,7 @@ config = {
     'launcher_error_log_file': 'logs/launcher_error.log',
     'version': version,
     'onetime_tasks': [  # tasks to execute
+        ["src.task.RahaiBlocksTask", "RahaiBlocksTask"],
         ["src.task.DailyTask", "DailyTask"],
         ["src.task.FarmEchoTask", "FarmEchoTask"],
         ["src.task.NightmareNestTask", "NightmareNestTask"],

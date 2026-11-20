@@ -2,6 +2,22 @@
 
 El historial comienza en v3.0.0.
 
+## v3.8.5 (2026-11-20)
+
+- Se añadió la tarea «3.8 拉海洛方块·逆转» al inicio de Actividades diarias para el cliente de Windows en chino simplificado. Abre la lista de niveles del evento y mantén el juego en primer plano. La tarea intenta superar las dificultades desbloqueadas y pendientes, y vuelve a la lista después de cada victoria.
+- Compatible con tableros de dos y tres bandejas, incluida la fase de 4500 puntos con bloques grises fijos en las esquinas. La tarea comprueba la vista previa antes de soltar cada pieza.
+- Se corrigió la interrupción del teletransporte de recuperación cuando se superponen los iconos del mapa. Si el punto más cercano está bloqueado, la tarea prueba otros puntos cercanos.
+
+## v3.8.5-beta.2 (2026-11-18)
+
+- Versión de mantenimiento: se actualizó la generación de notas de lanzamiento en GitHub; sin cambios adicionales para el usuario.
+
+## v3.8.4 (2026-11-18)
+
+- Se ha restablecido el juego en la nube a 1080p, con preferencia por Edge y colores de captura corregidos en pantallas HDR.
+- Se ha mejorado la detección de objetivos y barras de salud en el combate en la nube, incluidas las barras de acciones largas y las barras de salud baja afectadas por la compresión.
+- Se ha añadido la recuperación ante los avisos de desconexión del juego en la nube (errores 1020 y 4012).
+
 ## v3.8.3 (2026-11-15)
 
 - Se añadió Pynput como método de entrada seleccionable; PostMessage sigue siendo el predeterminado.
