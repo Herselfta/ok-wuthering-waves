@@ -1,5 +1,7 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
+
+from ok.task.exceptions import WaitFailedException
 
 from src.task.BaseCombatTask import BaseCombatTask, CharRevivedException
 from src.task.DomainTask import DomainTask
@@ -36,6 +38,7 @@ class TestTacetDeathReentry(unittest.TestCase):
     def make_task(self, deaths):
         task = TacetTask.__new__(TacetTask)
         task.stamina_once = 60
+        task.tr = str
         task.teleports = []
         task.logs = []
         task.combat_once, task.combat_calls = combat_results(deaths)
@@ -54,7 +57,7 @@ class TestTacetDeathReentry(unittest.TestCase):
     def test_reenter_from_f2_book_after_revive(self):
         task = self.make_task(deaths=1)
 
-        task.farm_tacet(config={'Which Tacet Suppression to Farm': 1})
+        self.assertEqual(60, task.farm_tacet(config={'Which Tacet Suppression to Farm': 1}))
 
         self.assertEqual([0, 0], task.teleports)
         self.assertEqual(2, len(task.combat_calls))
@@ -63,7 +66,7 @@ class TestTacetDeathReentry(unittest.TestCase):
     def test_stop_after_max_recovery_retries(self):
         task = self.make_task(deaths=99)
 
-        self.assertIsNone(task.farm_tacet(config={'Which Tacet Suppression to Farm': 1}))
+        self.assertEqual(0, task.farm_tacet(config={'Which Tacet Suppression to Farm': 1}))
 
         self.assertEqual(3, len(task.teleports))
         self.assertEqual(3, len(task.combat_calls))
@@ -77,6 +80,44 @@ class TestTacetDeathReentry(unittest.TestCase):
         task.farm_tacet(config={'Which Tacet Suppression to Farm': 1})
 
         self.assertEqual([False, True, True], flags)
+
+    def test_rechallenge_clicks_detected_button_without_teleporting_again(self):
+        task = self.make_task(deaths=0)
+        task.use_stamina = Mock(side_effect=[(True, 120), (False, 120)])
+        task.wait_until = lambda condition, **kwargs: condition()
+        rechallenge_button = Mock()
+        task.ocr = Mock(return_value=[rechallenge_button])
+        task.click = Mock()
+        task.click_relative = Mock()
+
+        stamina_spent = task.farm_tacet(config={'Which Tacet Suppression to Farm': 1})
+
+        self.assertEqual(240, stamina_spent)
+        self.assertEqual([0], task.teleports)
+        self.assertEqual(2, len(task.combat_calls))
+        task.click.assert_called_once_with(rechallenge_button, after_sleep=0.2)
+        task.click_relative.assert_called_once_with(0.365, 0.853, hcenter=True)
+
+    def test_resumes_active_arena_when_combat_stopped_before_reward(self):
+        task = self.make_task(deaths=0)
+        task.walk_to_treasure = Mock(side_effect=[WaitFailedException(), None])
+        task.in_realm = Mock(return_value=True)
+        task.wait_combat = Mock(return_value=True)
+
+        self.assertEqual(60, task.farm_tacet(config={'Which Tacet Suppression to Farm': 1}))
+        self.assertEqual([0], task.teleports)
+        self.assertEqual(2, len(task.combat_calls))
+
+    def test_missing_reward_without_active_combat_still_fails(self):
+        task = self.make_task(deaths=0)
+        task.walk_to_treasure = Mock(side_effect=WaitFailedException())
+        task.in_realm = Mock(return_value=True)
+        task.wait_combat = Mock(return_value=False)
+
+        with self.assertRaises(WaitFailedException):
+            task.farm_tacet(config={'Which Tacet Suppression to Farm': 1})
+
+        self.assertEqual(1, len(task.combat_calls))
 
 
 class TestFarmEchoDeathReentry(unittest.TestCase):
@@ -176,16 +217,42 @@ class TestDomainHealPoint(unittest.TestCase):
     def test_heal_point_set_only_after_recovery(self):
         task = DomainTask.__new__(DomainTask)
         task.stamina_once = 40
+        task.tr = str
         task.realm_entry_at_heal_point = True  # 上一次运行的残留
         task.open_F2_book_and_get_stamina = lambda: (120, 0, 120)
         task.sleep = task.log_info = lambda *args, **kwargs: None
-        results = iter([(False, 0), (False, 0), (True, 0)])
-        task.farm_in_domain = lambda must_use: next(results)
-        flags = record_heal_point(task, 'farm_in_domain')
+        task.info_incr = task.pick_f = task.walk_to_treasure = task.click = Mock()
+        task.make_sure_in_world = Mock()
+        task.walk_until_f = Mock(return_value=True)
+        task.combat_once = Mock(side_effect=[CharRevivedException(), CharRevivedException(), True])
+        task.use_stamina = Mock(return_value=(False, 40))
+        flags = record_heal_point(task, 'combat_once')
 
         task.farm_domain_with_recovery_loop(0, lambda: None)
 
         self.assertEqual([False, True, True], flags)
+
+    def test_missing_rechallenge_prompt_reenters_with_remaining_budget(self):
+        task = DomainTask.__new__(DomainTask)
+        task.stamina_once = 40
+        task.tr = str
+        task.open_F2_book_and_get_stamina = Mock(side_effect=[(120, 100, 220), (40, 100, 140)])
+        for name in ('sleep', 'log_info', 'info_incr', 'pick_f', 'walk_to_treasure',
+                     'click', 'make_sure_in_world', 'combat_once', 'rechallenge_domain'):
+            setattr(task, name, Mock())
+        task.walk_until_f = Mock(side_effect=[True, False, True])
+        task.use_stamina = Mock(side_effect=[(True, 80), (False, 40)])
+        enter = Mock(side_effect=lambda: self.assertFalse(task.realm_entry_at_heal_point))
+
+        task.farm_domain_with_recovery_loop(120, enter)
+
+        self.assertEqual(2, enter.call_count)
+        self.assertEqual(2, task.combat_once.call_count)
+        self.assertEqual([120, 40], [call.kwargs['must_use'] for call in task.use_stamina.call_args_list])
+        self.assertEqual([True, False, True],
+                         [call.kwargs['raise_if_not_found'] for call in task.walk_until_f.call_args_list])
+        task.rechallenge_domain.assert_called_once()
+        self.assertEqual(2, task.make_sure_in_world.call_count)
 
 
 class TestReviveAtHealPoint(unittest.TestCase):

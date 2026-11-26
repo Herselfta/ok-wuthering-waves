@@ -2,6 +2,59 @@
 
 El historial comienza en v3.0.0.
 
+## v3.8.15 (2026-11-25)
+- Se corrigieron los errores repetidos de OCR y se restauró la conversión a chino simplificado al usar la interfaz en chino tradicional.
+- Las ejecuciones programadas se cierran si se agota el tiempo de inicio de sesión. Tras revivir, se espera más a que termine el viaje a la baliza.
+- El farmeo de dominios puede volver a entrar desde la guía si, al repetir el desafío, no aparece el aviso para iniciar la siguiente ronda.
+- El combate automático lee con mayor precisión el medidor de Concierto y reduce las esperas al intentar usar habilidades y los cambios entre personajes de apoyo. Se corrigió un cambio adicional después de la habilidad de resonancia de Suisui.
+- El combate automático tiene en cuenta la duración del sueño de Lily al elegir a quién cambiar y conserva las asignaciones personalizadas de los botones del ratón al detectar atajos con OCR.
+
+## v3.8.14 (2026-11-24)
+
+- Juego en la nube: los fotogramas se leen directamente del vídeo del juego en lugar de capturar la ventana del navegador, así que la captura sigue funcionando con el navegador minimizado (ok-script 3.0.13).
+- Juego en la nube: tras un fallo al abrir el navegador, volver a iniciar funciona sin reiniciar ok-ww (ok-script 3.0.12).
+- Cuando una tarea se detiene por un error, la captura se guarda aunque el error ocurra justo después de una espera, en `screenshots/error/` con un nombre como `error_DailyTask_CannotFindException` (ok-script 3.0.11).
+- «3.8 拉海洛方块·逆转» ya no guarda una captura cada vez que falla la vista previa de colocación; sigue reintentando y registra una advertencia.
+
+## v3.8.13 (2026-11-23)
+
+- «3.8 拉海洛方块·逆转»: ya no se detiene cuando una fase elimina más bloques de los previstos (bloques explosivos y averiados).
+- «3.8 拉海洛方块·逆转»: cierra las explicaciones de mecánicas que aparecen sobre el tablero en las nuevas fases y reconoce tableros con cuatro bandejas de piezas.
+- «3.8 拉海洛方块·逆转»: reconoce el tablero aunque su borde superior esté unos píxeles más arriba o más abajo.
+
+## v3.8.12 (2026-11-22)
+
+- La tarea diaria vuelve a estar al principio de la lista de tareas.
+- La documentación de la línea de comandos ahora inicia las tareas por nombre de clase (por ejemplo, `-t DailyTask -e`) en lugar de por posición en la lista, e incluye los nombres de clase de las tareas habituales.
+
+## v3.8.11 (2026-11-22)
+
+- Publica los cambios de v3.8.10 indicados abajo; la compilación v3.8.10 no se publicó. Sin otros cambios visibles para el usuario.
+
+## v3.8.10 (2026-11-22)
+
+- Se añadió la tarea manual “Farmeo de recursos de mejora”, que sigue el objetivo de mejora de la Guía: limpia el Nido de Pesadilla del set de ecos (sin gastar Ondaplacas), farmea primero los materiales de ascensión y de habilidad del resonador (respetando los 3 cobros semanales de materiales de habilidad) y luego gasta las Ondaplacas restantes en la Supresión Tacet del set de ecos. Solo admite la interfaz del juego en chino simplificado a 16:9.
+- Se añadió “Objetivo de mejora” a la opción “Qué farmear” de “📅 Tarea diaria”; farmea con los ajustes de la tarea Farmeo de recursos de mejora.
+- Se añadió un botón Exportar registros a la pestaña de registro (ok-script 3.0.10).
+
+## v3.8.9 (2026-11-20)
+
+- Se corrigió que la tarea «3.8 GalGame» se atascara en otros tutoriales iniciales, incluido el aviso de guardado («点击【档案存储】»), las ventanas de ayuda de varias páginas («疲劳») y el tutorial de encargos especiales que aparece al cambiar de pestaña en la agenda.
+
+## v3.8.8 (2026-11-20)
+
+- Se corrigió que la tarea «3.8 GalGame» se atascara en el tutorial inicial de descanso de la agenda («执行【休息】类行为后，会【减少】疲劳») y ahora cierra la pantalla de gestión de guardados («档案管理») si bloquea la apertura de las páginas de recompensas del evento.
+
+## v3.8.7 (2026-11-20)
+
+- Se corrigió el fallo de la tarea «3.8 GalGame» al abrir o volver desde las páginas de recompensas del evento durante las transiciones de menú.
+- Se actualizó la tarea diaria para ejecutar el Nido de Pesadilla después de gastar resistencia, reclamando primero las recompensas diarias si se obtuvieron recompensas de Supresión Tácita.
+- Se mejoró Supresión Tácita para reanudar el combate cuando la recompensa aún no está disponible durante una pelea activa, y para localizar el botón Reintentar mediante reconocimiento de texto con posición de respaldo.
+
+## v3.8.6 (2026-11-20)
+
+- Se añadió la tarea «3.8 GalGame» a Actividades diarias para el cliente en chino simplificado. Iníciala desde la página del evento «第二索拉：未名之梦» para avanzar el semestre y reclamar las recompensas disponibles.
+
 ## v3.8.5 (2026-11-20)
 
 - Se añadió la tarea «3.8 拉海洛方块·逆转» al inicio de Actividades diarias para el cliente de Windows en chino simplificado. Abre la lista de niveles del evento y mantén el juego en primer plano. La tarea intenta superar las dificultades desbloqueadas y pendientes, y vuelve a la lista después de cada victoria.
